@@ -32,6 +32,14 @@ Keep this list current: it is the first thing read before every change.
 - **Links** (`#links`, `#links/<id>`, `#links/new`): create and edit links (name, website, question, kinds, colour, button
   text and side, thank-you text, rating/email on or off, open/closed) with a live preview; install code tabs (script, link,
   own button, HTML link); new code (rotates the public code), re-run insights, delete.
+- **Team workspaces:** each link has its owner plus invited teammates (Links → Team card). The owner invites by email
+  (the invite appears on the invitee's Overview and bell when they sign in with that email) and can copy an invite link
+  (`#join/<token>`; Prepsto sends no email). Teammates triage, assign, comment and write stories; only the owner changes
+  settings, the team or the code, deletes feedback or the link. Members can leave; the owner can remove people or cancel invites.
+- **Assign + @mention:** assign feedback to a teammate ("Assigned to you" on the Overview, "Assigned to me" filter in the Inbox);
+  type `@` in any comment (drawer or story) to mention a teammate.
+- **Notification bell** (header): mentions, assignments, invitations, people joining; each opens what it's about
+  (`#inbox/entry/<id>`, `#story/<id>`, `#join/<token>`); mark one or all read.
 - **Starter sample:** every new member gets "Sample: Lumen Notes" (14 messages, 2 stories) to explore; deletable.
 
 **For everyone:** a landing page (with "Try the panel" on the demo link `#f/demo`), sign-up with email and password, a feedback form ("Send feedback" in the footer and menu),
@@ -39,7 +47,7 @@ and the Privacy & Terms page (footer link, `#legal`).
 
 **For admins** (`#admin`; arkulinskis@gmail.com becomes an admin on first sign-in):
 - **Feedback inbox:** feedback about Prepsto itself: New / Read / Done, private notes.
-- **Links:** every feedback link with its owner and message count; close or reopen one (admins never see the feedback itself).
+- **Links:** every feedback link with its owner and message count (team links included); close or reopen one (admins never see the feedback itself).
 - **Users:** search, make admin, disable an account.
 - **Demo data:** the public demo link `#f/demo` ("Lumen Notes (demo)", owned by a demo account); remove or reload it.
 
@@ -70,7 +78,7 @@ With the dev server running, `http://localhost:8765/demo/embed.html` is a preten
 web/            the interface: core.js/core.css (shared engine + design tokens), app.js (header, footer), pages/*.html
 client_code/    Main.py (the only Anvil form: bridge to the server, sign-in), legal.py
 server_code/    common.py, Accounts.py, Feedback.py, Admin.py, DemoData.py, legal_server.py,
-                Boards.py (links + the public panel), Inbox.py, Stories.py, Insights.py (rules engine / AI hook), Samples.py
+                Boards.py (links + the public panel), Team.py (teams, invites, notifications), Inbox.py, Stories.py, Insights.py (rules engine / AI hook), Samples.py
 assets/         icon.svg + generated PNG icons, widget.js (the embeddable widget), served at _/theme/<name>
 tools/          sync_to_anvil.py (settings + table schema), deploy.py, check.py, preview/ (dev server, UI tests, screenshots), testing/
 ```

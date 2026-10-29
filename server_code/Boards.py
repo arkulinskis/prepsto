@@ -31,7 +31,22 @@ def new_slug():
     raise Exception("Could not make a unique code")
 
 
-def board_dict(b, counts=True):
+def role_in(b, me):
+    """"owner", "member" (active teammate) or None."""
+    if b is None or me is None:
+        return None
+    if b["owner"] == me:
+        return "owner"
+    return "member" if len(app_tables.members.search(board=b, user=me, status="active")) else None
+
+
+def team_board(board_id, me):
+    """The board if the caller is its owner or an active teammate."""
+    b = C.row_by_id(app_tables.boards, board_id)
+    return b if role_in(b, me) else None
+
+
+def board_dict(b, counts=True, me=None):
     d = {"id": b.get_id(), "name": b["name"], "slug": b["slug"], "site_url": b["site_url"] or "",
          "prompt": b["prompt"] or DEFAULTS["prompt"], "thanks": b["thanks"] or DEFAULTS["thanks"],
          "label": b["label"] or DEFAULTS["label"], "color": b["color"] or DEFAULTS["color"],
@@ -43,6 +58,11 @@ def board_dict(b, counts=True):
         d["total"] = len(rows)
         d["new"] = len([r for r in rows if r["status"] == "new"])
         d["last"] = C.iso(max([r["created"] for r in rows])) if len(rows) else None
+    if me is not None:
+        d["role"] = role_in(b, me)
+        d["owner_name"] = C.name_of(b["owner"])
+        d["team"] = 1 + len(app_tables.members.search(board=b, status="active"))
+        d["pending"] = len(app_tables.members.search(board=b, status="invited")) if d["role"] == "owner" else 0
     return d
 
 
@@ -53,8 +73,14 @@ def owned_board(board_id, me):
     return b
 
 
-def my_boards(me):
-    return list(app_tables.boards.search(tables.order_by("created", ascending=True), owner=me))
+def my_boards(me, owned_only=False):
+    """Boards the caller owns, then the ones they're an active teammate on."""
+    own = list(app_tables.boards.search(tables.order_by("created", ascending=True), owner=me))
+    if owned_only:
+        return own
+    shared = [m["board"] for m in app_tables.members.search(user=me, status="active") if m["board"] is not None]
+    shared.sort(key=lambda b: b["created"])
+    return own + [b for b in shared if b not in own]
 
 
 def ensure_starter(me):
@@ -94,7 +120,7 @@ def _clean(data):
 def list_boards():
     me = C.require_user()
     ensure_starter(me)
-    return {"boards": [board_dict(b) for b in my_boards(me)], "kinds": KINDS}
+    return {"boards": [board_dict(b, me=me) for b in my_boards(me)], "kinds": KINDS}
 
 
 @anvil.server.callable(require_user=True)
@@ -111,10 +137,10 @@ def save_board(board_id, data):
             return C.fail("That link doesn't exist, or it isn't yours.")
         b.update(**d)
     else:
-        if len(my_boards(me)) >= MAX_BOARDS:
+        if len(my_boards(me, owned_only=True)) >= MAX_BOARDS:
             return C.fail("You can have up to %d links. Delete one you no longer use." % MAX_BOARDS)
         b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
-    return C.ok(board=board_dict(b))
+    return C.ok(board=board_dict(b, me=me))
 
 
 @anvil.server.callable(require_user=True)
@@ -125,7 +151,7 @@ def new_board_code(board_id):
     if b is None:
         return C.fail("That link doesn't exist, or it isn't yours.")
     b["slug"] = new_slug()
-    return C.ok(board=board_dict(b))
+    return C.ok(board=board_dict(b, me=me))
 
 
 @anvil.server.callable(require_user=True)
@@ -139,6 +165,10 @@ def delete_board(board_id):
 
 
 def delete_board_rows(b):
+    for n in app_tables.notifications.search(board=b):
+        n.delete()
+    for m in app_tables.members.search(board=b):
+        m.delete()
     for s in app_tables.stories.search(board=b):
         for c in app_tables.comments.search(story=s):
             c.delete()

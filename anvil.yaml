@@ -139,6 +139,11 @@ db_schema:
         width: 200
       name: is_demo
       type: bool
+    - admin_ui:
+        order: 6
+        width: 200
+      name: mentions
+      type: simpleObject
     indexes: []
     server: full
     title: Comments
@@ -232,6 +237,12 @@ db_schema:
         width: 200
       name: is_demo
       type: bool
+    - admin_ui:
+        order: 17
+        width: 200
+      name: assignee
+      target: users
+      type: link_single
     indexes: []
     server: full
     title: Entries
@@ -287,6 +298,126 @@ db_schema:
     indexes: []
     server: full
     title: Feedback
+  members:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: board
+      target: boards
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 2
+        width: 200
+      name: email
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: role
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: status
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: token
+      type: string
+    - admin_ui:
+        order: 6
+        width: 200
+      name: invited_by
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 7
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 8
+        width: 200
+      name: joined
+      type: datetime
+    - admin_ui:
+        order: 9
+        width: 200
+      name: is_demo
+      type: bool
+    indexes: []
+    server: full
+    title: Members
+  notifications:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: actor
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 2
+        width: 200
+      name: kind
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: board
+      target: boards
+      type: link_single
+    - admin_ui:
+        order: 4
+        width: 200
+      name: entry
+      target: entries
+      type: link_single
+    - admin_ui:
+        order: 5
+        width: 200
+      name: story
+      target: stories
+      type: link_single
+    - admin_ui:
+        order: 6
+        width: 200
+      name: text
+      type: string
+    - admin_ui:
+        order: 7
+        width: 200
+      name: read
+      type: bool
+    - admin_ui:
+        order: 8
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 9
+        width: 200
+      name: is_demo
+      type: bool
+    indexes: []
+    server: full
+    title: Notifications
   stories:
     client: none
     columns:
@@ -472,7 +603,7 @@ metadata:
   title: 'Prepsto: customer feedback to user stories'
 name: Prepsto
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=9de21e3bf5\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
+  head_html: "<script src=\"_/theme/legal-kit.js?v=75aca7af77\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
     \ initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#ffffff\">\n<meta name=\"apple-mobile-web-app-capable\"\
     \ content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"\
     https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap\"\
@@ -481,7 +612,7 @@ native_deps:
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
     \    if (!ours) return;\n    document.querySelectorAll('link[rel~=\"icon\"]').forEach(function (l) { if (l !== ours) l.remove();\
     \ });\n  }\n  keep();\n  document.addEventListener('DOMContentLoaded', keep);\n  window.addEventListener('load', keep);\n\
-    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=6abe6258c9\">\n<script src=\"_/theme/app.js?v=3d4530f476\"\
+    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=08f3564798\">\n<script src=\"_/theme/app.js?v=5ab0494788\"\
     ></script>\n"
 package_name: Prepsto
 runtime_options:

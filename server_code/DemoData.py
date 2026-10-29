@@ -16,10 +16,12 @@ from . import Samples
 DEMO_SLUG = "demo"
 DEMO_USERS = [
     ("Prepsto Team", "team.demo@example.com"),
+    ("Maya Chen", "maya.demo@example.com"),     # teammates on the demo link
+    ("Theo Martin", "theo.demo@example.com"),
 ]
 
 # Tables that hold demo rows (each has an is_demo column). Children before parents.
-DEMO_TABLES = ["comments", "entries", "stories", "boards"]
+DEMO_TABLES = ["notifications", "comments", "entries", "stories", "members", "boards"]
 
 
 def state():
@@ -46,6 +48,15 @@ def load():
                                   kinds=["bug", "idea", "praise", "question", "other"], ask_email=True, ask_rating=True,
                                   is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True)
     Samples.fill(b, users[0], is_demo=True)
+    for u in users[1:]:
+        app_tables.members.add_row(board=b, user=u, email=u["email"], role="member", status="active", token=None,
+                                   invited_by=users[0], created=C.now() - dt.timedelta(days=18),
+                                   joined=C.now() - dt.timedelta(days=17), is_demo=True)
+    urgent = app_tables.entries.get(board=b, priority="urgent")
+    if urgent is not None:
+        urgent["assignee"] = users[1]
+        app_tables.comments.add_row(author=users[2], entry=urgent, body="@Maya Chen can you check the rename code path?",
+                                    mentions=[users[1].get_id()], created=C.now() - dt.timedelta(hours=20), is_demo=True)
     C.set_setting("demo", "loaded")
     return counts()
 

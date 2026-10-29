@@ -420,15 +420,55 @@
       '<button type="button" data-signout>' + UI.icon('logout') + 'Sign out</button></div>';
   }
 
+  /* The notification bell: mentions, assignments, invites, people joining (server_code/Team.py).
+     Refreshed quietly at most every 20 seconds, when a page opens. */
+  var bell = { at: 0, data: null, busy: false };
+  function bellHtml() {
+    var n = bell.data ? bell.data.unread : 0;
+    return '<button type="button" class="ui-btn ghost icon px-bell" data-bell aria-label="Notifications' + (n ? ' (' + n + ' new)' : '') + '" aria-haspopup="true">' +
+      UI.icon('bell') + (n ? '<span class="px-bell-n">' + (n > 9 ? '9+' : n) + '</span>' : '') + '</button><div class="ui-menu px-notifs" data-bell-panel hidden></div>';
+  }
+  var VERB = { mention: 'mentioned you', assign: 'assigned you feedback', invite: 'invited you to', joined: 'joined' };
+  function notifHtml(n) {
+    var href = n.kind === 'invite' ? (n.token ? '#join/' + n.token : '#home') : n.story_id ? '#story/' + n.story_id : n.entry_id ? '#inbox/entry/' + n.entry_id : '#links';
+    var what = n.kind === 'invite' ? VERB.invite + ' <b>' + esc(n.board) + '</b>' : n.kind === 'joined' ? VERB.joined + ' <b>' + esc(n.board) + '</b>'
+      : VERB[n.kind] + ' <span class="faint">in ' + esc(n.board) + '</span>';
+    return '<a href="' + esc(href) + '" data-notif="' + esc(n.id) + '" class="px-notif' + (n.read ? '' : ' unread') + '"><span class="ui-avatar">' + esc(UI.initials(n.actor)) + '</span><span class="grow">' +
+      '<span><b>' + esc(n.actor) + '</b> ' + what + '</span>' + (n.text && n.kind !== 'invite' && n.kind !== 'joined' ? '<span class="q">' + esc(n.text) + '</span>' : '') +
+      '<span class="t">' + esc(UI.ago(n.created)) + '</span></span></a>';
+  }
+  function paintBell() {
+    var b = document.querySelector('[data-bell]');
+    if (!b) return;
+    var open = !document.querySelector('[data-bell-panel]').hidden;
+    var holder = document.createElement('div'); holder.innerHTML = bellHtml();
+    b.replaceWith(holder.firstChild);
+    var panel = document.querySelector('[data-bell-panel]');
+    if (open) { panel.hidden = false; fillPanel(panel); }
+  }
+  function fillPanel(panel) {
+    var d = bell.data;
+    panel.innerHTML = '<div class="px-notifs-head"><b>Notifications</b>' + (d && d.unread ? '<button type="button" data-bell-read>Mark all read</button>' : '') + '</div>' +
+      (!d ? '<p class="small muted" style="padding:10px 12px;margin:0">Loading…</p>' : d.items.length ? d.items.map(notifHtml).join('')
+        : '<p class="small muted" style="padding:14px 12px;margin:0">Nothing yet. When a teammate mentions you or assigns you feedback, it shows up here.</p>');
+  }
+  UI.refreshBell = function (force) {
+    if (!UI.me || bell.busy || (!force && Date.now() - bell.at < 20000)) return;
+    bell.busy = true;
+    UI.apiQuiet('get_notifications').then(function (d) { bell.data = d; bell.at = Date.now(); bell.busy = false; paintBell(); },
+      function () { bell.busy = false; });
+  };
+
   UI.shell = {
     header: function (me, active) {
       var nav = UI.navPages();
+      if (me) setTimeout(function () { UI.refreshBell(); }, 50);
       return '<div class="ui-header-in">' + brand() +
         (me ? '<nav class="ui-nav" aria-label="Main">' + nav.map(function (p) {
           return '<a href="#' + p.name + '" class="' + (p.name === active ? 'on' : '') + '">' + UI.icon(p.icon) + '<span>' + esc(p.nav) + '</span></a>';
         }).join('') + '</nav>' : '') +
         '<div class="ui-header-right">' +
-        (me ? '<button type="button" class="ui-avatar-btn" data-menu-toggle aria-label="Your account" aria-haspopup="true">' + esc(UI.initials(me.name)) + '</button>' + userMenu(me)
+        (me ? bellHtml() + '<button type="button" class="ui-avatar-btn" data-menu-toggle aria-label="Your account" aria-haspopup="true">' + esc(UI.initials(me.name)) + '</button>' + userMenu(me)
           : (active === 'auth' ? '' : '<a class="ui-btn ghost" href="#auth" data-go="auth">Sign in</a><a class="ui-btn primary" href="#auth/signup" data-go="auth/signup">Get started</a>')) +
         '</div></div>';
     },
@@ -450,6 +490,19 @@
     },
     wire: function (root) {
       root.addEventListener('click', function (e) {
+        var bp = root.querySelector('[data-bell-panel]');
+        if (e.target.closest('[data-bell]') && bp) {
+          bp.hidden = !bp.hidden;
+          if (!bp.hidden) { fillPanel(bp); UI.refreshBell(true); }
+          return;
+        }
+        var nl = e.target.closest('[data-notif]');
+        if (nl && nl.classList.contains('unread')) UI.apiQuiet('mark_notifications_read', [nl.getAttribute('data-notif')]).then(function () { UI.refreshBell(true); });
+        if (e.target.closest('[data-bell-read]')) {
+          UI.apiQuiet('mark_notifications_read').then(function () { UI.refreshBell(true); });
+          return;
+        }
+        if (bp && !bp.hidden && !e.target.closest('[data-bell-panel] .px-notifs-head')) bp.hidden = true;
         var t = e.target.closest('[data-menu-toggle]');
         var menu = root.querySelector('[data-menu]');
         if (t && menu) { menu.hidden = !menu.hidden; t.setAttribute('aria-expanded', String(!menu.hidden)); return; }
@@ -459,6 +512,8 @@
       document.addEventListener('keydown', function (e) {
         var menu = root.querySelector('[data-menu]');
         if (e.key === 'Escape' && menu) menu.hidden = true;
+        var bp = root.querySelector('[data-bell-panel]');
+        if (e.key === 'Escape' && bp) bp.hidden = true;
       });
     },
     onTheme: function () {  // redraw the menu's Auto/Light/Dark buttons and keep the menu open
@@ -638,7 +693,10 @@
         '<div class="px-controls"><label class="ui-field"><span class="small">Status</span><select data-set="status">' +
           PX.STATUSES.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === e.status ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label>' +
           '<label class="ui-field"><span class="small">Priority</span><select data-set="priority">' +
-          PX.PRIORITIES.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === e.priority ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label></div>' +
+          PX.PRIORITIES.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === e.priority ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label>' +
+          '<label class="ui-field px-assign"><span class="small">Assigned to</span><select data-assign><option value="">Nobody</option>' +
+          (d.team || []).map(function (p) { return '<option value="' + esc(p.id) + '"' + (e.assignee && e.assignee.id === p.id ? ' selected' : '') + '>' + esc(p.name) + (UI.me && p.name === UI.me.name ? ' (me)' : '') + '</option>'; }).join('') +
+          '</select></label></div>' +
         '<div class="px-section"><h4>Tags</h4><div class="px-tags">' +
           e.tags.map(function (t) { return '<span class="px-tag">#' + esc(t) + '<button data-untag="' + esc(t) + '" aria-label="Remove ' + esc(t) + '">×</button></span>'; }).join('') +
           '<form data-tagform style="display:inline"><input type="text" name="tag" placeholder="+ add tag" maxlength="24"></form></div></div>' +
@@ -656,12 +714,13 @@
                 d.stories.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.title) + '</option>'; }).join('') + '</select>' : '') + '</div>') + '</div>' +
         '<div class="px-section"><h4>' + UI.icon('chat') + ' Team comments</h4><div class="px-comments">' +
           (d.comments.length ? d.comments.map(PX.comment).join('') : '<p class="small faint" style="margin:0">No comments yet. Notes here show up in the story export as supporting comments.</p>') + '</div>' +
-          '<form class="px-addc" data-commentform><textarea name="body" placeholder="Add a comment for your team" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Post</button></form></div>' +
+          '<form class="px-addc" data-commentform><textarea name="body" placeholder="Add a comment. Type @ to mention a teammate" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Post</button></form></div>' +
         (d.similar.length ? '<div class="px-section"><h4>' + UI.icon('pulse') + ' Similar feedback</h4><div class="px-similar">' + d.similar.map(function (s) {
           return '<button data-open="' + esc(s.id) + '"><span class="mono small">' + Math.round(s.score * 100) + '%</span><span class="t">' + esc(s.message) + '</span></button>';
         }).join('') + '</div></div>' : '') +
         '<div class="ui-row" style="border-top:1px solid var(--c-line);padding-top:14px"><button class="ui-btn sm" data-set-archive>' + UI.icon('archive') + (e.status === 'archived' ? 'Unarchive' : 'Archive') + '</button>' +
-          '<span class="ui-spacer"></span><button class="ui-btn sm danger" data-del>' + UI.icon('trash') + 'Delete</button></div>';
+          '<span class="ui-spacer"></span>' + (d.role === 'owner' ? '<button class="ui-btn sm danger" data-del>' + UI.icon('trash') + 'Delete</button>' : '') + '</div>';
+      PX.mentions(body.querySelector('[data-commentform] textarea'), d.team);
     }
     function load() { return UI.api('get_entry', id).then(draw, function (e) { body.innerHTML = '<div class="ui-empty"><h3>Not found</h3><p>' + esc(e.message) + '</p></div>'; }); }
     function update(changes) {
@@ -698,13 +757,14 @@
       var s = e.target.closest('[data-set]');
       if (s) { var ch = {}; ch[s.getAttribute('data-set')] = s.value; update(ch); }
       if (e.target.matches('[data-addstory]') && e.target.value) update({ story_id: e.target.value }).then(function () { UI.toast('Added to the story', 'ok'); });
+      if (e.target.matches('[data-assign]')) update({ assignee_id: e.target.value }).then(function () { UI.toast(e.target.value ? 'Assigned' : 'Unassigned', 'ok'); });
     });
     wrap.addEventListener('submit', function (e) {
       e.preventDefault();
       var f = e.target, v = UI.formData(f);
       if (f.matches('[data-tagform]') && v.tag.trim()) update({ add_tag: v.tag });
       if (f.matches('[data-commentform]') && v.body.trim()) {
-        UI.busy(f.querySelector('button'), UI.api('add_comment', 'entry', id, v.body)).then(function () { changed = true; load(); });
+        UI.busy(f.querySelector('button'), UI.api('add_comment', 'entry', id, v.body, PX.mentionIds(f.querySelector('textarea')))).then(function () { changed = true; load(); });
       }
     });
     load();
@@ -712,8 +772,65 @@
   };
 
   PX.comment = function (c) {
-    return '<div class="px-comment"><span class="ui-avatar">' + esc(UI.initials(c.author)) + '</span><div class="body"><div class="who"><b>' + esc(c.author) + '</b>' +
-      '<span>' + esc(UI.ago(c.created)) + '</span>' + (c.mine ? '<button data-delc="' + esc(c.id) + '" aria-label="Delete comment">Delete</button>' : '') + '</div><p>' + esc(c.body) + '</p></div></div>';
+    var body = esc(c.body);
+    (c.mentions || []).forEach(function (m) {
+      var tag = esc('@' + m.name);
+      body = body.split(tag).join('<span class="px-mention">' + tag + '</span>');
+    });
+    return '<div class="px-comment' + (c.me_mentioned ? ' to-me' : '') + '"><span class="ui-avatar">' + esc(UI.initials(c.author)) + '</span><div class="body"><div class="who"><b>' + esc(c.author) + '</b>' +
+      '<span>' + esc(UI.ago(c.created)) + '</span>' + (c.can_delete || c.mine ? '<button data-delc="' + esc(c.id) + '" aria-label="Delete comment">Delete</button>' : '') + '</div><p>' + body + '</p></div></div>';
+  };
+
+  /* @mentions: PX.mentions(textarea, team) adds autocomplete (type @, pick with arrows + Enter, or click);
+     PX.mentionIds(textarea) = the ids of the people still named in the text. team = [{id, name}]. */
+  PX.mentions = function (ta, team) {
+    if (!ta || ta._mx) return;
+    ta._mx = { team: team || [], picked: {} };
+    var wrap = ta.parentNode, list = document.createElement('div'), hits = [], sel = 0;
+    wrap.classList.add('px-mx-wrap');
+    list.className = 'px-mx'; list.hidden = true; list.setAttribute('role', 'listbox');
+    wrap.appendChild(list);
+    function query() {
+      var m = /(^|\s)@([^\s@]{0,30})$/.exec(ta.value.slice(0, ta.selectionStart));
+      return m ? m[2] : null;
+    }
+    function show() {
+      var q = query();
+      if (q === null || !ta._mx.team.length) { list.hidden = true; return; }
+      hits = ta._mx.team.filter(function (p) { return p.name.toLowerCase().indexOf(q.toLowerCase()) === 0 || p.name.toLowerCase().indexOf(' ' + q.toLowerCase()) > 0; }).slice(0, 6);
+      if (!hits.length) { list.hidden = true; return; }
+      sel = Math.min(sel, hits.length - 1);
+      list.innerHTML = hits.map(function (p, i) {
+        return '<button type="button" role="option" data-mx="' + i + '" class="' + (i === sel ? 'on' : '') + '"><span class="ui-avatar">' + esc(UI.initials(p.name)) + '</span>' + esc(p.name) + '</button>';
+      }).join('');
+      list.hidden = false;
+    }
+    function pick(p) {
+      var pos = ta.selectionStart, before = ta.value.slice(0, pos).replace(/@([^\s@]{0,30})$/, '@' + p.name + ' ');
+      ta.value = before + ta.value.slice(pos);
+      ta.selectionStart = ta.selectionEnd = before.length;
+      ta._mx.picked[p.id] = p.name;
+      list.hidden = true; ta.focus();
+    }
+    ta.addEventListener('input', function () { sel = 0; show(); });
+    ta.addEventListener('keydown', function (e) {
+      if (list.hidden) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length; show(); }
+      else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); pick(hits[sel]); }
+      else if (e.key === 'Escape') { e.stopPropagation(); list.hidden = true; }
+    });
+    ta.addEventListener('blur', function () { setTimeout(function () { list.hidden = true; }, 150); });
+    list.addEventListener('mousedown', function (e) { var b = e.target.closest('[data-mx]'); if (b) { e.preventDefault(); pick(hits[+b.getAttribute('data-mx')]); } });
+  };
+  PX.mentionIds = function (ta) {
+    var out = [], mx = ta && ta._mx;
+    if (!mx) return out;
+    mx.team.forEach(function (p) { if (ta.value.indexOf('@' + p.name) >= 0) out.push(p.id); });
+    return out;
+  };
+
+  PX.assignee = function (e) {
+    return e.assignee ? '<span class="px-who" title="Assigned to ' + esc(e.assignee.name) + '">' + esc(UI.initials(e.assignee.name)) + '</span>' : '';
   };
 
   /* One line of feedback in a list (home + inbox). */
@@ -722,7 +839,7 @@
     return '<article class="px-row' + (e.status === 'new' ? ' is-new' : '') + '" data-entry="' + esc(e.id) + '" tabindex="0">' +
       (opts.select ? '<label class="px-sel" title="Select"><input type="checkbox" data-pick value="' + esc(e.id) + '"' + (opts.picked ? ' checked' : '') + '></label>' : '') +
       '<div class="px-row-main"><div class="px-row-top">' + PX.kind(e.kind) + PX.prio(e.priority) + (e.starred ? '<span style="color:var(--c-accent)">' + UI.icon('star') + '</span>' : '') +
-      '<span class="px-row-who">' + esc(PX.who(e)) + '</span><span class="ui-spacer"></span><span class="mono small faint">' + esc(UI.ago(e.created)) + '</span></div>' +
+      '<span class="px-row-who">' + esc(PX.who(e)) + '</span><span class="ui-spacer"></span>' + PX.assignee(e) + '<span class="mono small faint">' + esc(UI.ago(e.created)) + '</span></div>' +
       '<p class="px-row-msg">' + esc(e.message) + '</p>' +
       '<div class="px-row-bot">' + PX.status(e.status) + PX.senti(e.ai) + PX.stars(e.rating) +
       e.tags.map(function (t) { return '<span class="px-tag">#' + esc(t) + '</span>'; }).join('') +
@@ -977,8 +1094,15 @@
           '<div class="ui-stat"><b>' + d.week + '</b><span>This week</span>' + trend(d.week, d.prev_week) + '</div>' +
           '<div class="ui-stat"><b>' + (d.avg_rating == null ? '–' : d.avg_rating + '<span style="font-size:1rem;color:var(--c-faint)">/5</span>') + '</b><span>Avg rating</span><small>' + UI.plural(d.rated, 'rating') + ', 30 days</small></div>' +
           '<a class="ui-stat" href="#stories"><b>' + d.stories + '</b><span>Stories</span><small>' + d.stories_ready + ' ready to build</small></a></div>' +
+        (d.invites.length ? '<section class="hm-invites">' + d.invites.map(function (v) {
+          return '<div class="hm-invite"><span class="ui-avatar">' + esc(UI.initials(v.from)) + '</span><div class="grow"><span><b>' + esc(v.from) + '</b> invited you to the team of <b>' + esc(v.board) + '</b></span>' +
+            '<span class="mono small faint">' + esc(UI.ago(v.created)) + '</span></div><button class="ui-btn sm ghost" data-decline="' + esc(v.token) + '">Decline</button>' +
+            '<button class="ui-btn sm primary" data-accept="' + esc(v.token) + '">' + UI.icon('check') + 'Join</button></div>';
+        }).join('') + '</section>' : '') +
         '<div class="hm-grid"><div>' +
           '<section class="ui-card hm-card"><h3>' + UI.icon('pulse') + 'Feedback per day <span class="mono small faint" style="font-weight:400">last 14 days</span></h3>' + PX.daily(d.daily) + '</section>' +
+          (d.assigned.length ? '<section class="hm-card"><h3>' + UI.icon('user') + 'Assigned to you <a href="#inbox" data-mine-go>See all ' + UI.icon('arrow') + '</a></h3><div class="px-list hm-attn">' +
+            d.assigned.map(function (e) { return PX.row(e, { board: true }); }).join('') + '</div></section>' : '') +
           (d.attention.length ? '<section class="hm-card"><h3>' + UI.icon('flag') + 'Needs attention <a href="#inbox">See all ' + UI.icon('arrow') + '</a></h3><div class="px-list hm-attn">' +
             d.attention.map(function (e) { return PX.row(e, { board: true }); }).join('') + '</div></section>' : '') +
           '<section class="hm-card"><h3>' + UI.icon('inbox') + 'Latest feedback <a href="#inbox">Inbox ' + UI.icon('arrow') + '</a></h3>' +
@@ -997,13 +1121,17 @@
             }).join('') + '</div>' : '<p class="muted small">Themes show up as feedback comes in.</p>') + '</section>' +
           '<section class="ui-card hm-card"><h3>' + UI.icon('link') + 'Your links <a href="#links">Manage ' + UI.icon('arrow') + '</a></h3><div class="hm-links">' +
             (d.boards.length ? d.boards.map(function (b) {
-              return '<div class="hm-link"><span class="dot" style="background:' + esc(b.color) + '"></span><div class="grow"><b>' + esc(b.name) + '</b><span>' + esc(b.slug) + ' · ' + b.total + ' total · ' + b.new + ' new</span></div>' +
+              return '<div class="hm-link"><span class="dot" style="background:' + esc(b.color) + '"></span><div class="grow"><b>' + esc(b.name) + '</b><span>' + (b.role === 'member' ? 'shared by ' + esc(b.owner_name) : esc(b.slug)) + ' · ' + b.total + ' total · ' + b.new + ' new' + (b.team > 1 ? ' · ' + UI.plural(b.team, 'person', 'people') : '') + '</span></div>' +
                 '<button class="ui-btn sm" data-copy="' + esc(b.slug) + '">' + UI.icon('copy') + 'Link</button></div>';
             }).join('') : '<a class="ui-btn primary block" href="#links">' + UI.icon('plus') + 'Create your first link</a>') + '</div></section>' +
         '</div></div></div>';
       view._boards = d.boards;
     }
     view.addEventListener('click', function (e) {
+      var ac = e.target.closest('[data-accept]'), dc = e.target.closest('[data-decline]');
+      if (ac) { UI.busy(ac, UI.api('accept_invite', ac.getAttribute('data-accept'))).then(function (r) { UI.toast('You joined ' + r.board, 'ok'); UI.refreshBell(true); load(); }); return; }
+      if (dc) { UI.api('decline_invite', dc.getAttribute('data-decline')).then(function () { UI.toast('Invitation declined'); load(); }); return; }
+      if (e.target.closest('[data-mine-go]')) { e.preventDefault(); var fl = UI.store.get('inbox.filters', {}) || {}; fl.mine = true; fl.board = ''; fl.status = 'open'; UI.store.set('inbox.filters', fl); UI.go('inbox'); return; }
       var c = e.target.closest('[data-copy]');
       if (c) { var b = view._boards.filter(function (x) { return x.slug === c.getAttribute('data-copy'); })[0]; PX.copy(PX.link(b), 'Link copied'); return; }
       var r = e.target.closest('[data-entry]');
@@ -1022,10 +1150,10 @@
 
   UI.page('inbox', { title: 'Inbox', nav: 'Inbox', icon: 'inbox', auth: 'user', order: 20 }, function (view, ctx) {
     var f = UI.store.get('inbox.filters', {}) || {};
-    f = { board: f.board || '', kind: f.kind || '', tag: f.tag || '', sort: f.sort || 'newest', starred: !!f.starred, status: f.status || 'open', q: '' };
+    f = { board: f.board || '', kind: f.kind || '', tag: f.tag || '', sort: f.sort || 'newest', starred: !!f.starred, mine: !!f.mine, status: f.status || 'open', q: '' };
     if (ctx.args[0] === 'tag' && ctx.args[1]) { f.tag = ctx.args[1]; f.status = 'all'; }
     var mode = UI.store.get('inbox.mode', 'list'), picked = {}, data = null;
-    function save() { UI.store.set('inbox.filters', { board: f.board, kind: f.kind, tag: f.tag, sort: f.sort, starred: f.starred, status: f.status }); }
+    function save() { UI.store.set('inbox.filters', { board: f.board, kind: f.kind, tag: f.tag, sort: f.sort, starred: f.starred, mine: f.mine, status: f.status }); }
 
     view.innerHTML = '<div class="ui-wrap"><div class="ib-head"><h1>Inbox</h1>' +
       '<div class="ui-seg" role="group" aria-label="View"><button data-mode="list">' + UI.icon('list') + ' List</button><button data-mode="board">' + UI.icon('board') + ' Board</button></div>' +
@@ -1035,13 +1163,14 @@
 
     function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
     function filters(d) {
-      var any = f.board || f.kind || f.tag || f.starred || f.q;
+      var any = f.board || f.kind || f.tag || f.starred || f.mine || f.q;
       return '<div class="ib-filters">' +
-        '<select data-f="board" aria-label="Link">' + opt('', 'All links', f.board) + d.boards.map(function (b) { return opt(b.id, b.name, f.board); }).join('') + '</select>' +
+        '<select data-f="board" aria-label="Link">' + opt('', 'All links', f.board) + d.boards.map(function (b) { return opt(b.id, b.name + (b.role === 'member' ? ' (shared)' : ''), f.board); }).join('') + '</select>' +
         '<select data-f="kind" aria-label="Kind">' + opt('', 'All kinds', f.kind) + Object.keys(PX.KINDS).map(function (k) { return opt(k, PX.KINDS[k][0], f.kind); }).join('') + '</select>' +
         '<select data-f="tag" aria-label="Tag">' + opt('', 'All tags', f.tag) + (f.tag && d.tags.indexOf(f.tag) < 0 ? opt(f.tag, '#' + f.tag, f.tag) : '') + d.tags.map(function (t) { return opt(t, '#' + t, f.tag); }).join('') + '</select>' +
         '<select data-f="sort" aria-label="Sort">' + opt('newest', 'Newest first', f.sort) + opt('oldest', 'Oldest first', f.sort) + opt('priority', 'Priority', f.sort) + opt('rating', 'Lowest rating', f.sort) + '</select>' +
         '<button class="ui-btn sm' + (f.starred ? ' on' : '') + '" data-starred>' + UI.icon('star') + 'Starred</button>' +
+        '<button class="ui-btn sm' + (f.mine ? ' on' : '') + '" data-mine>' + UI.icon('user') + 'Assigned to me</button>' +
         (any ? '<button class="ui-btn sm ghost clear" data-clear>' + UI.icon('x') + 'Clear filters</button>' : '') + '</div>';
     }
     function tabs(d) {
@@ -1051,7 +1180,7 @@
       }).join('') + '</nav>';
     }
     function empty() {
-      return '<div class="ui-empty">' + UI.icon('inbox') + '<h3>' + (f.q || f.kind || f.tag || f.board || f.starred ? 'Nothing matches these filters' : 'Nothing here') + '</h3>' +
+      return '<div class="ui-empty">' + UI.icon('inbox') + '<h3>' + (f.q || f.kind || f.tag || f.board || f.starred || f.mine ? 'Nothing matches these filters' : 'Nothing here') + '</h3>' +
         '<p>' + (f.status === 'new' ? 'No new feedback. Everything has been looked at.' : 'Try another tab or clear the filters.') + '</p></div>';
     }
     function list(d) {
@@ -1076,7 +1205,7 @@
         return '<section class="ib-col" data-col="' + c + '"><div class="ib-col-head">' + PX.status(c) + '<span class="mono small">' + by[c].length + '</span></div><div class="ib-cards">' +
           (by[c].length ? by[c].map(function (e) {
             return '<article class="ib-card" draggable="true" data-entry="' + esc(e.id) + '" tabindex="0"><div class="ui-row">' + PX.kind(e.kind) + PX.prio(e.priority) +
-              (e.starred ? '<span style="color:var(--c-accent)">' + UI.icon('star') + '</span>' : '') + '<span class="ui-spacer"></span><span class="mono small faint">' + esc(UI.ago(e.created).replace(' ago', '')) + '</span></div>' +
+              (e.starred ? '<span style="color:var(--c-accent)">' + UI.icon('star') + '</span>' : '') + '<span class="ui-spacer"></span>' + PX.assignee(e) + '<span class="mono small faint">' + esc(UI.ago(e.created).replace(' ago', '')) + '</span></div>' +
               '<p>' + esc(e.message) + '</p><div class="ui-row">' + PX.senti(e.ai) + e.tags.slice(0, 2).map(function (t) { return '<span class="px-tag">#' + esc(t) + '</span>'; }).join('') +
               (e.story ? '<span class="px-tag" title="' + esc(e.story.title) + '">' + UI.icon('story') + 'story</span>' : '') + '</div></article>';
           }).join('') : '<div class="ib-colempty">Drop feedback here</div>') + '</div></section>';
@@ -1088,7 +1217,7 @@
       body.innerHTML = filters(d) + (mode === 'board' ? board(d) : list(d));
     }
     function load() {
-      var q = { board: f.board, kind: f.kind, tag: f.tag, sort: f.sort, starred: f.starred, q: f.q, status: mode === 'board' ? 'all' : f.status };
+      var q = { board: f.board, kind: f.kind, tag: f.tag, sort: f.sort, starred: f.starred, mine: f.mine, q: f.q, status: mode === 'board' ? 'all' : f.status };
       return UI.apiQuiet('get_inbox', q).then(function (d) {
         if (f.board && !d.boards.some(function (b) { return b.id === f.board; })) { f.board = ''; save(); return load(); }
         data = d;
@@ -1111,7 +1240,8 @@
       var s = t.closest('[data-status]');
       if (s) { f.status = s.getAttribute('data-status'); save(); picked = {}; load(); return; }
       if (t.closest('[data-starred]')) { f.starred = !f.starred; save(); load(); return; }
-      if (t.closest('[data-clear]')) { f.board = f.kind = f.tag = f.q = ''; f.starred = false; view.querySelector('[data-search] input').value = ''; save(); load(); return; }
+      if (t.closest('[data-mine]')) { f.mine = !f.mine; save(); load(); return; }
+      if (t.closest('[data-clear]')) { f.board = f.kind = f.tag = f.q = ''; f.starred = f.mine = false; view.querySelector('[data-search] input').value = ''; save(); load(); return; }
       if (t.closest('[data-bulk-clear]')) { picked = {}; draw(); return; }
       if (t.closest('[data-bulk-tag]')) {
         var mm = UI.modal('<h2>Tag ' + UI.plural(Object.keys(picked).length, 'piece') + ' of feedback</h2><form data-tagall class="ui-stack"><input type="text" name="tag" maxlength="24" required placeholder="e.g. onboarding">' +
@@ -1163,7 +1293,43 @@
       en.status = st; draw();
       UI.apiQuiet('update_entry', id, { status: st }).then(function () { UI.toast('Moved to ' + PX.label(PX.STATUSES, st), 'ok'); load(); }, function (err) { UI.toast(err.message, 'error'); load(); });
     });
-    return load();
+    return load().then(function () {
+      if (ctx.args[0] === 'entry' && ctx.args[1]) open(ctx.args[1]);
+    });
+  });
+})();
+
+/* ===== join.html ===== */
+(function () {
+  var esc = UI.esc;
+  UI.page('join', { title: 'Join a team' }, function (view, ctx) {
+    var token = ctx.args[0] || '';
+    view.innerHTML = '<div class="ui-wrap"><div class="jn"><div class="ui-skel" style="height:300px"></div></div></div>';
+    return UI.api('get_invite', token).then(function (r) {
+      var me = ctx.me, actions;
+      if (r.is_owner) actions = '<p class="muted">You own this link, so you\'re already on its team.</p><div class="ui-row"><a class="ui-btn primary" href="#links">Go to your links</a></div>';
+      else if (r.already) actions = '<p class="muted">You\'re already on this team.</p><div class="ui-row"><a class="ui-btn primary" href="#inbox">Open the inbox</a></div>';
+      else if (me) actions = '<p class="muted small">Signed in as ' + esc(me.email) + '</p><div class="ui-row"><button class="ui-btn ghost" data-no>Not now</button>' +
+        '<button class="ui-btn primary lg" data-yes>' + UI.icon('check') + 'Join the team</button></div>';
+      else actions = '<p class="muted">Create a free Prepsto account (or sign in) to join.</p><div class="ui-row"><button class="ui-btn" data-auth="auth">Sign in</button>' +
+        '<button class="ui-btn primary" data-auth="auth/signup">Create an account ' + UI.icon('arrow') + '</button></div>';
+      view.innerHTML = '<div class="ui-wrap"><div class="jn"><div class="ui-card"><div class="marks"><span class="ui-avatar">' + esc(UI.initials(r.inviter)) + '</span><i></i>' +
+        '<img src="_/theme/icon.svg" alt=""></div><div class="eyebrow">// team invitation</div><h1>' + esc(r.inviter) + ' invited you to <span style="color:var(--c-brand)">' + esc(r.board) + '</span></h1>' +
+        '<ul><li>' + UI.icon('check') + 'Read and triage the feedback this link collects</li><li>' + UI.icon('check') + 'Assign feedback, comment and @mention teammates</li>' +
+        '<li>' + UI.icon('check') + 'Write and export user stories together</li></ul>' + actions + '</div></div></div>';
+    }, function (e) {
+      view.innerHTML = '<div class="ui-wrap"><div class="jn"><div class="ui-empty">' + UI.icon('link') + '<h3>Invitation not found</h3><p>' + esc(e.message) + '</p>' +
+        '<a class="ui-btn" href="#">Go to Prepsto</a></div></div></div>';
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!(UI.current() && UI.current().name === 'join')) return;
+    var token = UI.current().args[0];
+    var a = e.target.closest('[data-auth]');
+    if (a) { UI.after = '#join/' + token; UI.go.apply(null, a.getAttribute('data-auth').split('/')); return; }
+    var y = e.target.closest('[data-yes]');
+    if (y) { UI.busy(y, UI.api('accept_invite', token)).then(function (r) { UI.toast('Welcome to the team of ' + r.board, 'ok'); UI.go('inbox'); }); return; }
+    if (e.target.closest('[data-no]')) UI.go('home');
   });
 })();
 
@@ -1254,8 +1420,9 @@
     view.innerHTML = '<div class="ui-wrap"><div class="ui-skel" style="height:460px"></div></div>';
 
     function form(b) {
-      var isNew = !b.id;
-      return '<form class="lk-form" data-form>' +
+      var isNew = !b.id, ro = b.role === 'member';
+      return '<form class="lk-form" data-form><fieldset class="lk-fs"' + (ro ? ' disabled' : '') + '>' +
+        (ro ? '<p class="lk-ro">' + UI.icon('lock') + ' Shared with you by ' + esc(b.owner_name) + '. Only the owner can change these settings.</p>' : '') +
         '<label class="ui-field"><span>Name <em>(only you see it)</em></span><input type="text" name="name" value="' + esc(b.name) + '" maxlength="60" required placeholder="e.g. My app – beta"></label>' +
         '<label class="ui-field"><span>Website <em>(optional)</em></span><input type="url" name="site_url" value="' + esc(b.site_url) + '" maxlength="200" placeholder="https://myapp.com"></label>' +
         '<label class="ui-field"><span>The question at the top</span><input type="text" name="prompt" value="' + esc(b.prompt) + '" maxlength="140"></label>' +
@@ -1272,8 +1439,8 @@
         '<div class="lk-switches"><label class="ui-check"><input type="checkbox" name="ask_rating"' + (b.ask_rating ? ' checked' : '') + '> Ask for a star rating</label>' +
           '<label class="ui-check"><input type="checkbox" name="ask_email"' + (b.ask_email ? ' checked' : '') + '> Ask for an email (optional for them)</label>' +
           '<label class="ui-check"><input type="checkbox" name="is_open"' + (b.is_open ? ' checked' : '') + '> Open: accepting feedback</label></div>' +
-        '<div class="ui-row"><button class="ui-btn primary" type="submit">' + UI.icon('check') + (isNew ? 'Create link' : 'Save changes') + '</button>' +
-          (isNew && boards.length ? '<button type="button" class="ui-btn ghost" data-cancel>Cancel</button>' : '') + '</div></form>';
+        (ro ? '' : '<div class="ui-row"><button class="ui-btn primary" type="submit">' + UI.icon('check') + (isNew ? 'Create link' : 'Save changes') + '</button>' +
+          (isNew && boards.length ? '<button type="button" class="ui-btn ghost" data-cancel>Cancel</button>' : '') + '</div>') + '</fieldset></form>';
     }
     function install(b) {
       var T = [['script', 'Script', 'code'], ['link', 'Link', 'link'], ['button', 'Own button', 'sliders'], ['html', 'HTML link', 'external']];
@@ -1305,18 +1472,41 @@
         '<p class="muted">Each link is one feedback panel: share the link, or add one line of code to your site for a floating button.</p></div></div>' +
         '<div class="lk-picker">' + boards.map(function (x) {
           return '<a class="lk-pick' + (b.id === x.id ? ' on' : '') + '" href="#links/' + esc(x.id) + '"><span class="dot" style="background:' + esc(x.color) + '"></span>' + esc(x.name) +
-            ' <small>' + x.total + (x.new ? ' · ' + x.new + ' new' : '') + (x.is_open ? '' : ' · closed') + '</small></a>';
+            ' <small>' + x.total + (x.new ? ' · ' + x.new + ' new' : '') + (x.is_open ? '' : ' · closed') + (x.role === 'member' ? ' · shared' : x.team > 1 ? ' · team of ' + x.team : '') + '</small></a>';
         }).join('') + '<a class="lk-pick add' + (!b.id ? ' on' : '') + '" href="#links/new">' + UI.icon('plus') + 'New link</a></div>' +
         '<div class="lk-grid"><div>' +
-          (b.is_sample ? '<div class="lk-sample">' + UI.icon('info') + ' This sample link came with your account so you can explore. Delete it whenever you like.</div>' : '') +
+          (b.is_sample && b.role === 'owner' ? '<div class="lk-sample">' + UI.icon('info') + ' This sample link came with your account so you can explore. Delete it whenever you like.</div>' : '') +
           '<section class="ui-card"><h3 class="lk-h">' + UI.icon('sliders') + (b.id ? 'Panel settings' : 'New feedback link') + '</h3>' + form(b) + '</section>' +
-          (b.id ? install(b) +
+          (b.id ? install(b) + '<section class="ui-card" data-team><h3 class="lk-h">' + UI.icon('users') + 'Team</h3><div class="ui-skel" style="min-height:60px"></div></section>' +
             '<section class="ui-card"><h3 class="lk-h">' + UI.icon('shield') + 'Manage</h3><div class="ui-row" style="margin-bottom:12px"><span class="mono small muted">code: ' + esc(b.slug) + ' · created ' + esc(UI.fmtDate(b.created)) + ' · ' + UI.plural(b.total, 'message') + '</span></div>' +
-            '<div class="lk-danger"><a class="ui-btn sm" href="#inbox" data-inbox>' + UI.icon('inbox') + 'See its feedback</a><button class="ui-btn sm" data-newcode>' + UI.icon('refresh') + 'New code</button>' +
-            '<button class="ui-btn sm" data-reanalyze>' + UI.icon('sparkle') + 'Re-run insights</button><button class="ui-btn sm danger" data-delete>' + UI.icon('trash') + 'Delete link</button></div>' +
-            '<p class="ui-hint">A new code stops the old link and snippet working (handy if spam finds it). Deleting removes all its feedback and stories.</p></section>' : '') +
+            '<div class="lk-danger"><a class="ui-btn sm" href="#inbox" data-inbox>' + UI.icon('inbox') + 'See its feedback</a>' +
+            (b.role === 'owner' ? '<button class="ui-btn sm" data-newcode>' + UI.icon('refresh') + 'New code</button>' : '') +
+            '<button class="ui-btn sm" data-reanalyze>' + UI.icon('sparkle') + 'Re-run insights</button>' +
+            (b.role === 'owner' ? '<button class="ui-btn sm danger" data-delete>' + UI.icon('trash') + 'Delete link</button>' : '') + '</div>' +
+            (b.role === 'owner' ? '<p class="ui-hint">A new code stops the old link and snippet working (handy if spam finds it). Deleting removes all its feedback and stories.</p>' : '') + '</section>' : '') +
         '</div><div>' + preview(b) + '</div></div></div>';
       paint();
+      if (b.id) team();
+    }
+    function team() {
+      var box = view.querySelector('[data-team]'), id = cur.id;
+      return UI.apiQuiet('list_team', id).then(function (d) {
+        if (!box.isConnected || cur.id !== id) return;
+        box.innerHTML = '<h3 class="lk-h">' + UI.icon('users') + 'Team <span class="mono small faint" style="text-transform:none;letter-spacing:0">' + UI.plural(d.people.filter(function (p) { return p.status === 'active'; }).length, 'person', 'people') + '</span></h3>' +
+          '<div class="lk-team">' + d.people.map(function (p) {
+            var pending = p.status === 'invited';
+            return '<div class="lk-person' + (pending ? ' pending' : '') + '" data-member="' + esc(p.id || '') + '"><span class="ui-avatar">' + (pending ? UI.icon('mail') : esc(UI.initials(p.name))) + '</span>' +
+              '<div class="grow"><b>' + esc(pending ? p.email : p.name) + (p.me ? ' <span class="faint">(you)</span>' : '') + '</b><span>' +
+              (pending ? 'invited ' + esc(UI.ago(p.created)) + ' · not joined yet' : p.role + (p.email && !p.me ? ' · ' + esc(p.email) : '')) + '</span></div>' +
+              (pending && d.is_owner ? '<button class="ui-btn sm" data-invlink="' + esc(p.token) + '">' + UI.icon('link') + 'Copy invite link</button>' : '') +
+              (p.role !== 'owner' && (d.is_owner || p.me) ? '<button class="ui-btn sm ghost" data-remove="' + esc(p.id) + '" data-name="' + esc(pending ? p.email : p.name) + '"' + (p.me ? ' data-leave' : '') + '>' +
+                (p.me ? 'Leave' : pending ? 'Cancel' : 'Remove') + '</button>' : '') + '</div>';
+          }).join('') + '</div>' +
+          (d.is_owner ? '<form class="lk-invite" data-inviteform><input type="email" name="email" placeholder="teammate@company.com" required aria-label="Teammate\'s email">' +
+            '<button class="ui-btn primary" type="submit">' + UI.icon('plus') + 'Invite</button></form>' +
+            '<p class="ui-hint">They see the invitation when they sign in with that email. Prepsto doesn\'t send email: copy the invite link and send it yourself to be sure. Teammates can triage, assign, comment and write stories; only you change settings and the team.</p>'
+            : '<p class="ui-hint">Type @ in a comment to mention a teammate. Only ' + esc(cur.owner_name) + ' can invite people.</p>');
+      });
     }
     function values() {
       var f = view.querySelector('[data-form]'), v = UI.formData(f);
@@ -1325,7 +1515,7 @@
         kinds: v.kinds, ask_email: v.ask_email, ask_rating: v.ask_rating, is_open: v.is_open };
     }
     function paint() {  // redraw the preview from the form, without saving
-      var v = Object.assign({}, cur, values());
+      var v = Object.assign({}, cur, cur.role === 'member' ? {} : values());
       v.name = v.name || 'Your app'; v.prompt = v.prompt || BLANK.prompt; v.label = v.label || 'Feedback';
       if (!v.kinds.length) v.kinds = ['idea'];
       var stage = view.querySelector('[data-stage]');
@@ -1355,6 +1545,21 @@
       var cp = x.closest('[data-cp]');
       if (cp) { PX.copy(cp.getAttribute('data-cp') === 'link' ? PX.link(cur) : view._code, cp.getAttribute('data-cp') === 'link' ? 'Link copied' : 'Code copied'); return; }
       if (x.closest('[data-cancel]')) { UI.go('links'); return; }
+      var il = x.closest('[data-invlink]');
+      if (il) { PX.copy(PX.base() + '#join/' + il.getAttribute('data-invlink'), 'Invite link copied'); return; }
+      var rm = x.closest('[data-remove]');
+      if (rm) {
+        var leave = rm.hasAttribute('data-leave');
+        UI.confirm({ title: leave ? 'Leave "' + cur.name + '"?' : 'Remove ' + rm.getAttribute('data-name') + '?',
+          text: leave ? 'You lose access to its feedback and stories. The owner can invite you again.' : 'They lose access to this link\'s feedback and stories. Their comments stay.',
+          ok: leave ? 'Leave' : 'Remove', danger: true }).then(function (yes) {
+          if (!yes) return;
+          UI.api('remove_member', cur.id, rm.getAttribute('data-remove')).then(function (r) {
+            if (r.left) { UI.toast('You left the team', 'ok'); UI.go('links'); } else { UI.toast('Removed', 'ok'); team(); }
+          });
+        });
+        return;
+      }
       if (x.closest('[data-inbox]')) { e.preventDefault(); var fl = UI.store.get('inbox.filters', {}) || {}; fl.board = cur.id; fl.status = 'open'; UI.store.set('inbox.filters', fl); UI.go('inbox'); return; }
       if (x.closest('[data-newcode]')) {
         UI.confirm({ title: 'Make a new code?', text: 'The current link and snippet stop working right away. You\'ll need to update your site with the new code.', ok: 'New code', danger: true }).then(function (yes) {
@@ -1370,6 +1575,15 @@
       }
     });
     view.addEventListener('submit', function (e) {
+      if (e.target.matches('[data-inviteform]')) {
+        e.preventDefault();
+        var f = e.target;
+        UI.busy(f.querySelector('button'), UI.api('invite_member', cur.id, UI.formData(f).email)).then(function (r) {
+          PX.copy(PX.base() + '#join/' + r.member.token, 'Invited ' + r.member.email + '. Invite link copied');
+          team();
+        });
+        return;
+      }
       if (!e.target.matches('[data-form]')) return;
       e.preventDefault();
       var isNew = !cur.id;
@@ -1549,7 +1763,7 @@
   PX.EXPORTS = EXPORTS;
 
   UI.page('story', { title: 'Story', auth: 'user' }, function (view, ctx) {
-    var id = ctx.args[0], S = null, bundle = null, pool = [], provider = 'rules', timer = null, saving = null, dirty = false;
+    var id = ctx.args[0], S = null, bundle = null, pool = [], team = [], provider = 'rules', timer = null, saving = null, dirty = false;
     view.innerHTML = '<div class="ui-wrap"><div class="ui-skel" style="height:480px"></div></div>';
 
     function opt(v, label, cur) { return '<option value="' + esc(v == null ? '' : v) + '"' + (String(v == null ? '' : v) === String(cur == null ? '' : cur) ? ' selected' : '') + '>' + esc(label) + '</option>'; }
@@ -1563,7 +1777,7 @@
     function draw() {
       var s = S;
       view.innerHTML = '<div class="ui-wrap">' +
-        '<div class="sy-top"><a class="ui-btn ghost sm" href="#stories">' + UI.icon('back') + 'Stories</a><span class="mono small faint">' + esc(s.board) + '</span><span class="ui-spacer"></span>' +
+        '<div class="sy-top"><a class="ui-btn ghost sm" href="#stories">' + UI.icon('back') + 'Stories</a><span class="mono small faint">' + esc(s.board) + ' · by ' + esc(s.author || '') + '</span><span class="ui-spacer"></span>' +
           '<span class="saved" data-saved>Saved</span>' +
           '<select data-k="status" aria-label="Status">' + PX.STORY_STATUSES.map(function (x) { return opt(x[0], x[1], s.status); }).join('') + '</select>' +
           '<button class="ui-btn primary" data-export>' + UI.icon('download') + 'Export</button>' +
@@ -1587,13 +1801,14 @@
             (s.entries.length ? '<div class="sy-fb">' + s.entries.map(quote).join('') + '</div>' : '<p class="muted small" style="margin:0">No feedback linked yet. Add some to ground the story in what customers said.</p>') + '</section>' +
           '<section class="ui-card"><h3 class="sy-h">' + UI.icon('users') + 'Supporting comments · ' + s.comments.length + '</h3><div class="px-comments">' +
             (s.comments.length ? s.comments.map(PX.comment).join('') : '<p class="muted small" style="margin:0">Decisions, findings and context from your team.</p>') + '</div>' +
-            '<form class="px-addc" data-commentform><textarea name="body" placeholder="Add a comment" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Post</button></form></section>' +
+            '<form class="px-addc" data-commentform><textarea name="body" placeholder="Add a comment. Type @ to mention" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Post</button></form></section>' +
           '<section class="ui-card sy-ai"><h3 class="sy-h">' + UI.icon('sparkle') + 'Assist <span class="ui-badge">' + (provider === 'ai' ? 'AI' : 'rules engine') + '</span></h3>' +
             '<p class="muted">Redraft the story from its linked feedback. Today this uses Prepsto\'s built-in rules; it\'s built so an AI model can take over the same job.</p>' +
             '<div class="ui-row"><button class="ui-btn sm" data-redraft' + (s.entries.length ? '' : ' disabled') + '>' + UI.icon('wand') + 'Redraft from feedback</button>' +
             '<button class="ui-btn sm ghost" data-export-ai>' + UI.icon('code') + 'AI-ready JSON</button></div></section>' +
         '</div></div></div>';
       sentenceNow(); fit();
+      PX.mentions(view.querySelector('[data-commentform] textarea'), team);
     }
     function collect() {
       var v = {};
@@ -1617,7 +1832,7 @@
     }
     function changed() { dirty = true; mark('Editing…'); clearTimeout(timer); timer = setTimeout(save, 900); sentenceNow(); }
     function load() {
-      return UI.api('get_story', id).then(function (r) { S = r.story; bundle = r.bundle; pool = r.pool; provider = r.provider; document.title = S.title + ' · Prepsto'; draw(); });
+      return UI.api('get_story', id).then(function (r) { S = r.story; bundle = r.bundle; pool = r.pool; provider = r.provider; team = r.team || []; document.title = S.title + ' · Prepsto'; draw(); });
     }
     function reloadKeep() { return save().then(load); }
 
@@ -1700,7 +1915,7 @@
       e.preventDefault();
       var v = UI.formData(e.target);
       if (!v.body.trim()) return;
-      UI.busy(e.target.querySelector('button'), save().then(function () { return UI.api('add_comment', 'story', id, v.body); })).then(load);
+      UI.busy(e.target.querySelector('button'), save().then(function () { return UI.api('add_comment', 'story', id, v.body, PX.mentionIds(e.target.querySelector('textarea'))); })).then(load);
     });
     view.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); dirty = true; save(); }

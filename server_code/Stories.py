@@ -7,7 +7,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Boards, Inbox, Insights
+from . import Boards, Inbox, Insights, Team
 
 STATUSES = ["draft", "ready", "in_progress", "shipped"]
 PRIORITIES = ["", "low", "medium", "high", "urgent"]
@@ -15,7 +15,7 @@ PRIORITIES = ["", "low", "medium", "high", "urgent"]
 
 def owned_story(story_id, me):
     s = C.row_by_id(app_tables.stories, story_id)
-    if s is None or s["owner"] != me:
+    if s is None or Boards.role_in(s["board"], me) is None:
         return None
     return s
 
@@ -28,7 +28,7 @@ def story_dict(s, me, full=False):
          "status": s["status"] or "draft", "points": s["points"], "source": s["source"] or "manual",
          "created": C.iso(s["created"]), "updated": C.iso(s["updated"]), "feedback_count": len(linked),
          "kinds": sorted(set(e["kind"] for e in linked)),
-         "comment_count": len(app_tables.comments.search(story=s))}
+         "comment_count": len(app_tables.comments.search(story=s)), "author": C.name_of(s["owner"])}
     if full:
         entries = []
         for e in linked:
@@ -56,14 +56,17 @@ def _clean(data):
 def list_stories(board_id=None, status=None):
     me = C.require_user()
     Boards.ensure_starter(me)
-    rows = list(app_tables.stories.search(tables.order_by("updated", ascending=False), owner=me))
+    rows = []
+    for b in Boards.my_boards(me):
+        rows.extend(app_tables.stories.search(board=b))
+    rows.sort(key=lambda s: s["updated"], reverse=True)
     if board_id:
         rows = [s for s in rows if s["board"].get_id() == board_id]
     counts = {st: len([s for s in rows if (s["status"] or "draft") == st]) for st in STATUSES}
     if status in STATUSES:
         rows = [s for s in rows if (s["status"] or "draft") == status]
     return {"stories": [story_dict(s, me) for s in rows], "counts": counts,
-            "boards": [{"id": b.get_id(), "name": b["name"]} for b in Boards.my_boards(me)]}
+            "boards": [{"id": b.get_id(), "name": b["name"], "role": Boards.role_in(b, me)} for b in Boards.my_boards(me)]}
 
 
 @anvil.server.callable(require_user=True)
@@ -79,7 +82,7 @@ def get_story(story_id):
         [{"author": c["author"], "body": c["body"]} for c in d["comments"]])
     pool = [Inbox.entry_dict(e) for e in app_tables.entries.search(tables.order_by("created", ascending=False), board=s["board"])
             if e["story"] is None and e["status"] != "archived"][:60]
-    return C.ok(story=d, bundle=bundle, pool=pool, statuses=STATUSES, provider=Insights.PROVIDER)
+    return C.ok(story=d, bundle=bundle, pool=pool, statuses=STATUSES, provider=Insights.PROVIDER, team=Team.team_list(s["board"]))
 
 
 @anvil.server.callable(require_user=True)
@@ -94,7 +97,7 @@ def create_story(board_id, entry_ids=None):
         if any(e["board"] != board for e in entries):
             return C.fail("Pick feedback from one link at a time: a story belongs to one link.")
     else:
-        board = Boards.owned_board(board_id, me)
+        board = Boards.team_board(board_id, me)
         if board is None:
             return C.fail("Choose one of your links for this story.")
     draft = Insights.draft_story([{"kind": e["kind"], "message": e["message"], "rating": e["rating"], "ai": e["ai"]}
@@ -170,9 +173,13 @@ def delete_story(story_id):
     s = owned_story(story_id, me)
     if s is None:
         return C.fail("That story doesn't exist (any more).")
+    if s["owner"] != me and s["board"]["owner"] != me:
+        return C.fail("Only the story's author or the link's owner can delete it.")
     for r in app_tables.entries.search(story=s):
         r["story"] = None
     for c in app_tables.comments.search(story=s):
         c.delete()
+    for n in app_tables.notifications.search(story=s):
+        n.delete()
     s.delete()
     return C.ok()
