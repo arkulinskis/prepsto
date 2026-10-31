@@ -7,7 +7,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Boards, Insights, Team
+from . import Boards, Insights, Team, Tracking
 
 STATUSES = ["new", "reviewing", "planned", "done", "archived"]
 PRIORITIES = ["", "low", "medium", "high", "urgent"]
@@ -23,6 +23,7 @@ def entry_dict(r):
             "tags": list(r["tags"] or []), "starred": bool(r["starred"]),
             "story": {"id": s.get_id(), "title": s["title"]} if s is not None else None,
             "ai": r["ai"] or {}, "created": C.iso(r["created"]), "updated": C.iso(r["updated"]),
+            "reply_waiting": bool(r["reply_waiting"]), "stage": Tracking.stage(r),
             "assignee": {"id": r["assignee"].get_id(), "name": C.name_of(r["assignee"])} if r["assignee"] is not None else None}
 
 
@@ -168,7 +169,8 @@ def get_entry(entry_id):
     return C.ok(entry=entry_dict(r), comments=[comment_dict(c, me) for c in comments],
                 similar=[dict(entry_dict(s), score=score) for score, s in Insights.similar(r, same_board)],
                 stories=[{"id": s.get_id(), "title": s["title"], "status": s["status"]} for s in stories],
-                team=Team.team_list(r["board"]), role=Boards.role_in(r["board"], me))
+                team=Team.team_list(r["board"]), role=Boards.role_in(r["board"], me),
+                tracking=Tracking.team_view(r, me))
 
 
 def _apply(r, changes, me):
@@ -207,8 +209,16 @@ def _apply(r, changes, me):
             if u != r["assignee"]:
                 Team.notify(u, me, "assign", r["board"], entry=r, text=(r["message"] or "")[:120])
     if upd:
+        before = {k: r[k] for k in ("status", "priority", "story")}
         upd["updated"] = C.now()
         r.update(**upd)
+        # the sender's public timeline (Tracking): what changed, in their words
+        if "status" in upd and upd["status"] != (before["status"] or "new"):
+            Tracking.log(r, "status", upd["status"], author=me)
+        if "priority" in upd and upd["priority"] != (before["priority"] or ""):
+            Tracking.log(r, "priority", upd["priority"], author=me)
+        if upd.get("story") is not None and upd["story"] != before["story"]:
+            Tracking.log(r, "story", upd["story"]["title"], author=me)
     return None
 
 
@@ -247,6 +257,7 @@ def bulk_update(entry_ids, changes):
 
 
 def _delete_entry(r):
+    Tracking.delete_rows(entry=r)
     for c in app_tables.comments.search(entry=r):
         c.delete()
     for n in app_tables.notifications.search(entry=r):

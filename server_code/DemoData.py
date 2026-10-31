@@ -14,6 +14,8 @@ from . import common as C
 from . import Samples
 
 DEMO_SLUG = "demo"
+DEMO_TRACK = "demo"
+DEMO_VERSION = 2  # bump to reload the demo everywhere once (2: tracking timelines + #t/demo)
 DEMO_USERS = [
     ("Prepsto Team", "team.demo@example.com"),
     ("Maya Chen", "maya.demo@example.com"),     # teammates on the demo link
@@ -21,7 +23,7 @@ DEMO_USERS = [
 ]
 
 # Tables that hold demo rows (each has an is_demo column). Children before parents.
-DEMO_TABLES = ["notifications", "comments", "entries", "stories", "members", "boards"]
+DEMO_TABLES = ["notifications", "updates", "comments", "entries", "stories", "members", "boards"]
 
 
 def state():
@@ -30,7 +32,7 @@ def state():
 
 def ensure_loaded():
     """Called by the public panel and the landing page: loads the demo once, unless an admin removed it."""
-    if state() == "never":
+    if state() == "never" or (state() == "loaded" and C.get_setting("demo_version", 1) != DEMO_VERSION):
         load()
 
 
@@ -46,7 +48,8 @@ def load():
                                   thanks="Thank you! This is the Prepsto demo, so nothing will happen with it, but now you know how it feels.",
                                   label="Feedback", color="#2b59ff", position="right",
                                   kinds=["bug", "idea", "praise", "question", "other"], ask_email=True, ask_rating=True,
-                                  is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True)
+                                  is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True,
+                                  public_track=True)
     Samples.fill(b, users[0], is_demo=True)
     for u in users[1:]:
         app_tables.members.add_row(board=b, user=u, email=u["email"], role="member", status="active", token=None,
@@ -57,7 +60,11 @@ def load():
         urgent["assignee"] = users[1]
         app_tables.comments.add_row(author=users[2], entry=urgent, body="@Maya Chen can you check the rename code path?",
                                     mentions=[users[1].get_id()], created=C.now() - dt.timedelta(hours=20), is_demo=True)
+    lea = [e for e in app_tables.entries.search(board=b) if (e["message"] or "").startswith("Let me invite")]
+    if lea:
+        lea[0]["track"] = DEMO_TRACK  # the landing page's "See what the sender sees" (#t/demo)
     C.set_setting("demo", "loaded")
+    C.set_setting("demo_version", DEMO_VERSION)
     return counts()
 
 

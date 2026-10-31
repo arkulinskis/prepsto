@@ -7,7 +7,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Boards, Inbox, Insights, Team
+from . import Boards, Inbox, Insights, Team, Tracking
 
 STATUSES = ["draft", "ready", "in_progress", "shipped"]
 PRIORITIES = ["", "low", "medium", "high", "urgent"]
@@ -108,7 +108,11 @@ def create_story(board_id, entry_ids=None):
                                    source=draft["source"] if entries else "manual",
                                    created=C.now(), updated=C.now(), is_demo=False)
     for e in entries:
+        was = e["status"]
         e.update(story=s, status="planned" if e["status"] in ("new", "reviewing") else e["status"], updated=C.now())
+        Tracking.log(e, "story", s["title"], author=me)
+        if e["status"] != was:
+            Tracking.log(e, "status", e["status"], author=me)
     return C.ok(story=story_dict(s, me))
 
 
@@ -122,7 +126,11 @@ def save_story(story_id, data):
     if len(d["title"]) < 2:
         return C.fail("Give the story a title (at least 2 characters).")
     d["updated"] = C.now()
+    was = s["status"] or "draft"
     s.update(**d)
+    if d["status"] != was and d["status"] != "draft":  # tell the people who asked for it: work started, shipped...
+        for e in app_tables.entries.search(story=s):
+            Tracking.log(e, "story_status", d["status"], author=me)
     return C.ok(story=story_dict(s, me))
 
 
@@ -150,6 +158,8 @@ def link_entries(story_id, entry_ids):
     if not rows or any(r is None or r["board"] != s["board"] for r in rows):
         return C.fail("Pick feedback from this story's link.")
     for r in rows:
+        if r["story"] != s:
+            Tracking.log(r, "story", s["title"], author=me)
         r.update(story=s, updated=C.now())
     s["updated"] = C.now()
     return C.ok(count=len(rows))

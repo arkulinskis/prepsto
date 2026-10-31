@@ -428,13 +428,14 @@
     return '<button type="button" class="ui-btn ghost icon px-bell" data-bell aria-label="Notifications' + (n ? ' (' + n + ' new)' : '') + '" aria-haspopup="true">' +
       UI.icon('bell') + (n ? '<span class="px-bell-n">' + (n > 9 ? '9+' : n) + '</span>' : '') + '</button><div class="ui-menu px-notifs" data-bell-panel hidden></div>';
   }
-  var VERB = { mention: 'mentioned you', assign: 'assigned you feedback', invite: 'invited you to', joined: 'joined' };
+  var VERB = { mention: 'mentioned you', assign: 'assigned you feedback', invite: 'invited you to', joined: 'joined', reply: 'replied on their tracking page' };
   function notifHtml(n) {
     var href = n.kind === 'invite' ? (n.token ? '#join/' + n.token : '#home') : n.story_id ? '#story/' + n.story_id : n.entry_id ? '#inbox/entry/' + n.entry_id : '#links';
     var what = n.kind === 'invite' ? VERB.invite + ' <b>' + esc(n.board) + '</b>' : n.kind === 'joined' ? VERB.joined + ' <b>' + esc(n.board) + '</b>'
       : VERB[n.kind] + ' <span class="faint">in ' + esc(n.board) + '</span>';
-    return '<a href="' + esc(href) + '" data-notif="' + esc(n.id) + '" class="px-notif' + (n.read ? '' : ' unread') + '"><span class="ui-avatar">' + esc(UI.initials(n.actor)) + '</span><span class="grow">' +
-      '<span><b>' + esc(n.actor) + '</b> ' + what + '</span>' + (n.text && n.kind !== 'invite' && n.kind !== 'joined' ? '<span class="q">' + esc(n.text) + '</span>' : '') +
+    var actor = n.kind === 'reply' ? 'A sender' : n.actor;
+    return '<a href="' + esc(href) + '" data-notif="' + esc(n.id) + '" class="px-notif' + (n.read ? '' : ' unread') + '"><span class="ui-avatar">' + (n.kind === 'reply' ? UI.icon('chat') : esc(UI.initials(actor))) + '</span><span class="grow">' +
+      '<span><b>' + esc(actor) + '</b> ' + what + '</span>' + (n.text && n.kind !== 'invite' && n.kind !== 'joined' ? '<span class="q">' + esc(n.text) + '</span>' : '') +
       '<span class="t">' + esc(UI.ago(n.created)) + '</span></span></a>';
   }
   function paintBell() {
@@ -585,6 +586,54 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   };
 
+  /* ------------------------------------------------------------------ following feedback (Tracking.py)
+     Stages the sender sees, the public timeline, and the list of a person's own feedback kept in their browser. */
+  PX.STAGES = [['received', 'Received'], ['reviewing', 'Under review'], ['planned', 'Planned'], ['in_progress', 'In progress'], ['done', 'Done'], ['closed', 'Closed']];
+  PX.stage = function (s) { return '<span class="px-stage ' + esc(s) + '">' + esc(PX.label(PX.STAGES, s)) + '</span>'; };
+  PX.trackLink = function (t) { return PX.base() + '#t/' + t; };
+  var STATUS_WORDS = { 'new': 'Back to Received', reviewing: 'Under review', planned: 'Planned', done: 'Done', archived: 'Closed for now' };
+  var STORY_WORDS = { ready: 'Ready to build', in_progress: 'Work started', shipped: 'Shipped' };
+  PX.updateLine = function (u) {
+    if (u.kind === 'received') return 'Feedback received';
+    if (u.kind === 'status') return 'Status: <b>' + esc(STATUS_WORDS[u.value] || u.value) + '</b>';
+    if (u.kind === 'priority') return u.value ? 'Priority set to <b>' + esc(PX.label(PX.PRIORITIES, u.value)) + '</b>' : 'Priority removed';
+    if (u.kind === 'story') return 'Added to the plan: <b>' + esc(u.value) + '</b>';
+    if (u.kind === 'story_status') return '<b>' + esc(STORY_WORDS[u.value] || u.value) + '</b>';
+    if (u.kind === 'reply') return '<b>' + esc(u.who || 'The team') + '</b> replied';
+    if (u.kind === 'sender') return '<b>' + esc(u.who && u.who !== 'Sender' ? u.who : 'You') + '</b> added';
+    return esc(u.kind);
+  };
+  /* PX.timeline(updates, {team: true}) newest first. For the team the sender's lines say "Sender". */
+  PX.timeline = function (list, opts) {
+    opts = opts || {};
+    if (!list || !list.length) return '<p class="small faint" style="margin:0">Nothing yet.</p>';
+    return '<div class="px-tl">' + list.slice().reverse().map(function (u) {
+      var done = (u.kind === 'status' && u.value === 'done') || (u.kind === 'story_status' && u.value === 'shipped');
+      var line = u.kind === 'sender' && opts.team ? '<b>Sender</b> replied' : PX.updateLine(u);
+      return '<div class="px-tl-item ' + esc(u.kind) + (done ? ' done' : '') + '"><span class="px-tl-dot"></span><div>' +
+        '<div class="px-tl-line"><span>' + line + '</span><span class="when" title="' + esc(UI.fmtDateTime(u.created)) + '">' + esc(UI.ago(u.created)) + '</span>' +
+        (opts.team && u.can_delete ? '<button type="button" data-delupdate="' + esc(u.id) + '">Remove</button>' : '') + '</div>' +
+        (u.text ? '<div class="px-tl-bubble">' + esc(u.text) + '</div>' : '') + '</div></div>';
+    }).join('') + '</div>';
+  };
+  /* The tracking codes of the feedback this browser sent, per link (in Prepsto's own storage, also inside the frame). */
+  PX.mine = {
+    list: function (slug) { var all = UI.store.get('mine', {}) || {}; return (all[slug] || []).slice(0, 30); },
+    add: function (slug, item) {
+      var all = UI.store.get('mine', {}) || {};
+      all[slug] = [item].concat((all[slug] || []).filter(function (x) { return x.t !== item.t; })).slice(0, 30);
+      UI.store.set('mine', all);
+    },
+    seen: function (t, iso) {
+      var s = UI.store.get('seen', {}) || {};
+      if (iso === undefined) return s[t] || '';
+      s[t] = iso; UI.store.set('seen', s);
+    },
+    fresh: function (it) {  // an update the person hasn't looked at yet (from the team, not their own)
+      return it.last_kind !== 'received' && it.last_kind !== 'sender' && it.last > (PX.mine.seen(it.token) || '');
+    }
+  };
+
   /* ------------------------------------------------------------------ the panel
      PX.panel(el, board, {preview, embed, onClose, page}) draws the feedback form into el. */
   PX.panel = function (el, b, opts) {
@@ -615,10 +664,41 @@
       return { bug: 'What went wrong? What did you expect to happen?', idea: 'What would you like to see?', praise: 'What do you like?',
         question: 'What would you like to know?', other: 'Tell us anything.' }[k] || 'Tell us anything.';
     }
+    var mine = opts.preview || !b.slug ? [] : PX.mine.list(b.slug), items = null;
+    function mineBar() {
+      if (!mine.length) return '';
+      var fresh = items ? items.filter(PX.mine.fresh).length : 0;
+      return '<button type="button" class="px-mine-bar" data-px-mine>' + UI.icon('pulse') + 'Your feedback · ' + mine.length +
+        (fresh ? ' <i aria-hidden="true"></i> ' + fresh + ' new update' + (fresh > 1 ? 's' : '') : '') + '<span class="go">' + UI.icon('arrow') + '</span></button>';
+    }
     function draw() {
-      el.innerHTML = '<div class="px-panel" style="--pc:' + esc(b.color) + '">' + head() + form() + foot + '</div>';
+      el.innerHTML = '<div class="px-panel" style="--pc:' + esc(b.color) + '">' + head() + mineBar() + form() + foot + '</div>';
+    }
+    function loadMine() {
+      if (!mine.length) return Promise.resolve();
+      return UI.apiQuiet('track_list', mine.map(function (x) { return x.t; })).then(function (r) {
+        items = r.items;
+        var bar = el.querySelector('[data-px-mine]');
+        if (bar) bar.outerHTML = mineBar();
+      }, function () {});
+    }
+    function showMine() {
+      var panel = el.querySelector('.px-panel');
+      function paint() {
+        panel.innerHTML = head() + '<div class="px-mine" data-px-minelist><h3>Your feedback</h3>' +
+          (!items ? '<div class="ui-skel" style="height:120px"></div>' : items.length ? items.map(function (it) {
+            return '<a class="px-mine-item" href="' + esc(PX.trackLink(it.token)) + '" target="_blank" rel="noopener" data-px-track="' + esc(it.token) + '"><span class="top">' +
+              PX.stage(it.stage) + (PX.mine.fresh(it) ? '<span class="new" title="New update"></span>' : '') + '<span class="when">' + esc(UI.ago(it.last)) + '</span></span>' +
+              '<p>' + esc(it.message) + '</p></a>';
+          }).join('') : '<p class="small muted">Nothing to show: the team may have removed it.</p>') +
+          '<p class="small faint" style="margin:6px 0 0">Kept in this browser only. Open one to see its progress and the team\'s replies.</p>' +
+          '<button type="button" class="ui-btn sm" data-px-again style="justify-self:start">' + UI.icon('plus') + 'Write new feedback</button></div>' + foot;
+      }
+      paint();
+      if (!items) loadMine().then(paint);
     }
     draw();
+    loadMine();
     var LABELS = ['', 'Poor', 'Meh', 'OK', 'Good', 'Great'];
     el.addEventListener('click', function (e) {
       var r = e.target.closest('[data-rate] button');
@@ -629,7 +709,11 @@
         return;
       }
       if (e.target.closest('[data-px-close]')) { if (opts.onClose) opts.onClose(); return; }
-      if (e.target.closest('[data-px-again]')) { rating = 0; draw(); }
+      if (e.target.closest('[data-px-again]')) { rating = 0; draw(); return; }
+      if (e.target.closest('[data-px-mine]')) { showMine(); return; }
+      var tr = e.target.closest('[data-px-track]');
+      if (tr) { PX.mine.seen(tr.getAttribute('data-px-track'), new Date().toISOString()); return; }
+      if (e.target.closest('[data-px-copytrack]')) { PX.copy(e.target.closest('[data-px-copytrack]').getAttribute('data-px-copytrack'), 'Tracking link copied'); }
     });
     el.addEventListener('change', function (e) {
       if (e.target.name === 'kind') { var t = el.querySelector('textarea[name=message]'); if (t) t.placeholder = placeholder(e.target.value); }
@@ -644,13 +728,22 @@
       var data = { kind: v.kind, message: v.message, rating: rating || null, email: v.email || '', website: v.website || '',
         page: opts.page || document.referrer || '', context: { screen: screen.width + 'x' + screen.height, browser: navigator.userAgent.slice(0, 160), lang: navigator.language || '' } };
       UI.busy(f.querySelector('[type=submit]'), UI.api('widget_submit', b.slug, data)).then(function (r) {
-        thanks(r.thanks);
+        if (r.track) {
+          PX.mine.add(b.slug, { t: r.track, at: new Date().toISOString() });
+          mine = PX.mine.list(b.slug); items = null;
+        }
+        thanks(r.thanks, r.track);
         if (opts.onSent) opts.onSent();
       }, function (ex) { err.textContent = ex.message; err.hidden = false; });
     });
-    function thanks(msg) {
+    function thanks(msg, track) {
       var panel = el.querySelector('.px-panel');
+      var follow = track || (opts.preview && b.public_track !== false);
+      var link = track ? PX.trackLink(track) : '#';
       panel.innerHTML = head() + '<div class="px-thanks" data-px-thanks><span class="tick">' + UI.icon('check') + '</span><h2>Sent</h2><p>' + esc(msg || b.thanks) + '</p>' +
+        (follow ? '<div class="px-follow" data-px-follow><b>Follow what happens next</b><p>See its status and priority, read the team\'s replies and answer them. This link is just for you.</p>' +
+          '<div class="ui-row"><a class="ui-btn sm send" href="' + esc(link) + '" target="_blank" rel="noopener"' + (track ? ' data-px-track="' + esc(track) + '"' : ' onclick="return false"') + '>' + UI.icon('pulse') + 'Track my feedback</a>' +
+          (track ? '<button type="button" class="ui-btn sm" data-px-copytrack="' + esc(link) + '">' + UI.icon('copy') + 'Copy link</button>' : '') + '</div></div>' : '') +
         '<button type="button" class="ui-btn sm" data-px-again>Send another</button></div>' + foot;
     }
   };
@@ -712,7 +805,8 @@
             : '<div class="ui-row"><button class="ui-btn sm primary" data-newstory>' + UI.icon('wand') + 'Draft a story from this</button>' +
               (d.stories.length ? '<select data-addstory style="max-width:240px;min-height:34px;padding:5px 8px;font-size:.88rem"><option value="">Add to a story…</option>' +
                 d.stories.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.title) + '</option>'; }).join('') + '</select>' : '') + '</div>') + '</div>' +
-        '<div class="px-section"><h4>' + UI.icon('chat') + ' Team comments</h4><div class="px-comments">' +
+        publicSection(d) +
+        '<div class="px-section"><h4>' + UI.icon('chat') + ' Team comments <span class="ui-badge">private</span></h4><div class="px-comments">' +
           (d.comments.length ? d.comments.map(PX.comment).join('') : '<p class="small faint" style="margin:0">No comments yet. Notes here show up in the story export as supporting comments.</p>') + '</div>' +
           '<form class="px-addc" data-commentform><textarea name="body" placeholder="Add a comment. Type @ to mention a teammate" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Post</button></form></div>' +
         (d.similar.length ? '<div class="px-section"><h4>' + UI.icon('pulse') + ' Similar feedback</h4><div class="px-similar">' + d.similar.map(function (s) {
@@ -721,6 +815,22 @@
         '<div class="ui-row" style="border-top:1px solid var(--c-line);padding-top:14px"><button class="ui-btn sm" data-set-archive>' + UI.icon('archive') + (e.status === 'archived' ? 'Unarchive' : 'Archive') + '</button>' +
           '<span class="ui-spacer"></span>' + (d.role === 'owner' ? '<button class="ui-btn sm danger" data-del>' + UI.icon('trash') + 'Delete</button>' : '') + '</div>';
       PX.mentions(body.querySelector('[data-commentform] textarea'), d.team);
+    }
+    function publicSection(d) {
+      var t = d.tracking || {}, e = d.entry;
+      if (!t.on) return '<div class="px-section px-public"><h4>' + UI.icon('pulse') + ' Updates for the sender</h4><p class="small muted" style="margin:0">Tracking is off for this link, so the sender can\'t follow it. ' +
+        (d.role === 'owner' ? 'Turn it on in <a href="#links/' + esc(e.board_id) + '">Links</a>.' : 'The link\'s owner can turn it on.') + '</p></div>';
+      var link = PX.trackLink(t.token);
+      var mail = e.email ? 'mailto:' + encodeURIComponent(e.email) + '?subject=' + encodeURIComponent('About your feedback on ' + e.board) +
+        '&body=' + encodeURIComponent('Hi ' + (e.name || '') + ',\n\nThank you for your feedback. You can follow it, read our replies and answer them here:\n' + link + '\n') : '';
+      return '<div class="px-section px-public"><h4>' + UI.icon('pulse') + ' Updates for the sender <span class="ui-badge">public</span></h4>' +
+        '<div class="px-public-head">' + PX.stage(t.stage) + '<span>' + (t.seen ? 'They last checked ' + esc(UI.ago(t.seen)) : 'They haven\'t opened their tracking page yet') + '</span>' +
+        (t.waiting ? '<span class="px-replied">Waiting for your reply</span>' : '') + '</div>' +
+        PX.timeline(t.updates, { team: true }) +
+        '<form class="px-addc" data-updateform><textarea name="body" placeholder="Reply to the sender: they see this on their tracking page" maxlength="2000"></textarea><button class="ui-btn sm primary" type="submit">Send</button></form>' +
+        '<div class="ui-row" style="margin-top:10px"><button type="button" class="ui-btn sm" data-cptrack="' + esc(link) + '">' + UI.icon('copy') + 'Copy their tracking link</button>' +
+        (mail ? '<a class="ui-btn sm" href="' + esc(mail) + '">' + UI.icon('mail') + 'Email it to them</a>' : '') + '</div>' +
+        '<p class="ui-hint" style="margin:8px 0 0">Status, priority and story changes appear on their page by themselves. Team comments stay private.</p></div>';
     }
     function load() { return UI.api('get_entry', id).then(draw, function (e) { body.innerHTML = '<div class="ui-empty"><h3>Not found</h3><p>' + esc(e.message) + '</p></div>'; }); }
     function update(changes) {
@@ -749,6 +859,10 @@
         });
         return;
       }
+      var ct = t.closest('[data-cptrack]');
+      if (ct) { PX.copy(ct.getAttribute('data-cptrack'), 'Tracking link copied'); return; }
+      var du = t.closest('[data-delupdate]');
+      if (du) { UI.api('delete_update', du.getAttribute('data-delupdate')).then(function () { changed = true; load(); }); return; }
       var dc = t.closest('[data-delc]');
       if (dc) UI.api('delete_comment', dc.getAttribute('data-delc')).then(load);
       if (t.closest('a[href^="#story/"]')) close();
@@ -763,6 +877,9 @@
       e.preventDefault();
       var f = e.target, v = UI.formData(f);
       if (f.matches('[data-tagform]') && v.tag.trim()) update({ add_tag: v.tag });
+      if (f.matches('[data-updateform]') && v.body.trim()) {
+        UI.busy(f.querySelector('button'), UI.api('post_update', id, v.body)).then(function () { changed = true; UI.toast('Sent: they\'ll see it on their tracking page', 'ok'); load(); });
+      }
       if (f.matches('[data-commentform]') && v.body.trim()) {
         UI.busy(f.querySelector('button'), UI.api('add_comment', 'entry', id, v.body, PX.mentionIds(f.querySelector('textarea')))).then(function () { changed = true; load(); });
       }
@@ -841,7 +958,7 @@
       '<div class="px-row-main"><div class="px-row-top">' + PX.kind(e.kind) + PX.prio(e.priority) + (e.starred ? '<span style="color:var(--c-accent)">' + UI.icon('star') + '</span>' : '') +
       '<span class="px-row-who">' + esc(PX.who(e)) + '</span><span class="ui-spacer"></span>' + PX.assignee(e) + '<span class="mono small faint">' + esc(UI.ago(e.created)) + '</span></div>' +
       '<p class="px-row-msg">' + esc(e.message) + '</p>' +
-      '<div class="px-row-bot">' + PX.status(e.status) + PX.senti(e.ai) + PX.stars(e.rating) +
+      '<div class="px-row-bot">' + PX.status(e.status) + (e.reply_waiting ? '<span class="px-replied" title="The sender replied on their tracking page">Sender replied</span>' : '') + PX.senti(e.ai) + PX.stars(e.rating) +
       e.tags.map(function (t) { return '<span class="px-tag">#' + esc(t) + '</span>'; }).join('') +
       (e.story ? '<span class="px-tag">' + UI.icon('story') + esc(e.story.title.length > 30 ? e.story.title.slice(0, 28) + '…' : e.story.title) + '</span>' : '') +
       (opts.board ? '<span class="mono small faint">' + esc(e.board) + '</span>' : '') + '</div></div></article>';
@@ -1352,15 +1469,22 @@
                ['board', 'List or board', 'Filter by link, kind, tag or rating, bulk-edit, or drag cards from New to Done.'],
                ['story', 'Real user stories', 'Persona, goal, benefit, testable acceptance criteria, estimates and priority, with the evidence attached.'],
                ['download', 'Export anywhere', 'Markdown, plain text, Gherkin, Jira markup, CSV, and a structured JSON bundle made for AI models.'],
-               ['moon', 'Light and dark', 'A calm, technical interface that follows your system theme, on desktop and phone.']],
+               ['pulse', 'Closed loop', 'Every sender gets a private tracking link with the status, priority and your replies. No more "did anyone read this?"']],
+    loopTitle: 'Support that never goes silent',
+    loopLead: 'The number one complaint people have about software is asking for something and never hearing back. With Prepsto, everyone who sends feedback can follow it.',
+    loop: [['pulse', 'A private tracking link', 'shown right after they send, and kept in the panel under "Your feedback".'],
+           ['flag', 'Status and priority, live', 'Received, under review, planned, in progress, done: it moves as you triage, with no extra work.'],
+           ['story', 'Linked to the plan', 'when their idea becomes a story, they see it, and how many others asked for the same thing.'],
+           ['chat', 'Public replies, two ways', 'answer them from the inbox; they can add details or answer your questions. Team comments stay private.']],
     makersTitle: 'For makers',
     makers: ['Several links: one per app, page or beta group', 'Close a panel or rotate its code in one click', 'Team comments that travel with the story'],
     usersTitle: 'For the people giving feedback',
-    users: ['No account, no sign-up, ten seconds', 'Email is optional, only if they want a reply', 'A clear thank-you, so they know it landed'],
+    users: ['No account, no sign-up, ten seconds', 'Email is optional, only if they want a reply', 'A private link to follow their idea from received to done'],
     faq: [['Is it free?', 'Yes, Prepsto is free while it is in beta. If we ever add paid plans, current links keep working and you will hear about it first.'],
           ['What does the code add to my site?', 'A small script that draws the button and, when clicked, opens the panel in a frame served by prepsto.com. It sets no cookies on your site and loads nothing until someone opens it.'],
           ['Who can read the feedback?', 'Only you, the owner of the link. The people sending feedback can\'t see each other\'s messages. Our Privacy & Terms page has the details.'],
           ['Does it use AI?', 'Today Prepsto uses a built-in rules engine for sentiment, themes and story drafts, so nothing leaves the app. It is built so an AI model can take over those jobs later, and you can already export an AI-ready JSON bundle.'],
+          ['Can people see what happened to their feedback?', 'Yes. After sending, they get a private tracking link showing the status, the priority you gave it, the story it became and your public replies, and they can answer. You can turn this off per link.'],
           ['Can my users send feedback from their phone?', 'Yes. The panel is designed for phones first and works in any modern browser.'],
           ['Can I export my stories to Jira or Linear?', 'Copy Jira markup straight into an issue, import the CSV, or paste the Markdown into Linear, GitHub or Notion.']],
     bandTitle: 'Your next feature is already in someone\'s head.',
@@ -1394,6 +1518,15 @@
       '</div>' + heroArt() + '</div></section>' +
       '<section class="lp-section" id="how"><div class="ui-wrap"><div class="lp-head"><div class="eyebrow">// how it works</div><h2>' + esc(C.stepsTitle) + '</h2><p>' + esc(C.stepsLead) + '</p></div>' +
         '<div class="lp-steps">' + C.steps.map(function (s, i) { return '<div class="lp-step"><span class="n">0' + (i + 1) + '</span><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p></div>'; }).join('') + '</div></div></section>' +
+      '<section class="lp-section" id="loop"><div class="ui-wrap"><div class="lp-loop"><div><div class="eyebrow">// closing the loop</div><h2>' + esc(C.loopTitle) + '</h2><p class="muted">' + esc(C.loopLead) + '</p>' +
+        '<ul>' + C.loop.map(function (l) { return '<li>' + UI.icon(l[0]) + '<span><b>' + esc(l[1]) + '</b>: ' + esc(l[2]) + '</span></li>'; }).join('') + '</ul>' +
+        '<a class="ui-btn" href="#t/demo">' + UI.icon('eye') + 'See what the sender sees</a></div>' +
+        '<div class="lp-track" aria-hidden="true"><div class="ui-row">' + '<span class="px-kind idea">' + UI.icon('bulb') + 'Idea</span><span class="ui-spacer"></span><span class="px-stage planned">Planned</span></div>' +
+          '<p class="q">Let me invite my team to a shared notebook and comment on each other\'s notes.</p>' +
+          '<div class="lp-steps5"><span class="on">Received</span><span class="on">Review</span><span class="on now">Planned</span><span>Building</span><span>Done</span></div>' +
+          '<div class="meta"><span>priority: medium</span><span>story: Shared notebooks for teams</span><span>+1 asked too</span></div>' +
+          '<div class="rep"><b>Lumen Notes team</b>Thanks Lea! Shared notebooks are planned for the next release. We\'ll post here as soon as there\'s a beta.</div></div>' +
+      '</div></div></section>' +
       '<section class="lp-section"><div class="ui-wrap"><div class="lp-head"><div class="eyebrow">// features</div><h2>' + esc(C.featuresTitle) + '</h2></div>' +
         '<div class="lp-features">' + C.features.map(function (f) { return '<div class="lp-feature">' + UI.icon(f[0]) + '<h3>' + esc(f[1]) + '</h3><p>' + esc(f[2]) + '</p></div>'; }).join('') + '</div></div></section>' +
       '<section class="lp-section"><div class="ui-wrap"><div class="lp-two">' +
@@ -1413,7 +1546,7 @@
   var esc = UI.esc;
   var SWATCHES = ['#2b59ff', '#0c0e14', '#ff5a1f', '#0f8a5f', '#7c3aed', '#e11d74', '#0891b2'];
   var BLANK = { id: '', name: '', site_url: '', prompt: 'How can we make this better?', thanks: 'Thank you! We read every message.', label: 'Feedback', color: '#2b59ff',
-    position: 'right', kinds: ['bug', 'idea', 'praise', 'question'], ask_email: true, ask_rating: true, is_open: true, slug: 'preview' };
+    position: 'right', kinds: ['bug', 'idea', 'praise', 'question'], ask_email: true, ask_rating: true, is_open: true, public_track: true, slug: 'preview' };
 
   UI.page('links', { title: 'Links', nav: 'Links', icon: 'link', auth: 'user', order: 40 }, function (view, ctx) {
     var boards = [], cur = null, tab = UI.store.get('links.tab', 'script');
@@ -1438,7 +1571,8 @@
           '<label class="ui-field"><span>Thank-you message</span><input type="text" name="thanks" value="' + esc(b.thanks) + '" maxlength="200"></label></div>' +
         '<div class="lk-switches"><label class="ui-check"><input type="checkbox" name="ask_rating"' + (b.ask_rating ? ' checked' : '') + '> Ask for a star rating</label>' +
           '<label class="ui-check"><input type="checkbox" name="ask_email"' + (b.ask_email ? ' checked' : '') + '> Ask for an email (optional for them)</label>' +
-          '<label class="ui-check"><input type="checkbox" name="is_open"' + (b.is_open ? ' checked' : '') + '> Open: accepting feedback</label></div>' +
+          '<label class="ui-check"><input type="checkbox" name="is_open"' + (b.is_open ? ' checked' : '') + '> Open: accepting feedback</label>' +
+          '<label class="ui-check"><input type="checkbox" name="public_track"' + (b.public_track !== false ? ' checked' : '') + '> Let people follow their feedback (a private tracking link with its status, priority and your replies)</label></div>' +
         (ro ? '' : '<div class="ui-row"><button class="ui-btn primary" type="submit">' + UI.icon('check') + (isNew ? 'Create link' : 'Save changes') + '</button>' +
           (isNew && boards.length ? '<button type="button" class="ui-btn ghost" data-cancel>Cancel</button>' : '') + '</div>') + '</fieldset></form>';
     }
@@ -1512,7 +1646,7 @@
       var f = view.querySelector('[data-form]'), v = UI.formData(f);
       v.kinds = Array.prototype.map.call(f.querySelectorAll('.lk-kinds input:checked'), function (i) { return i.name.slice(5); });
       return { name: v.name, site_url: v.site_url, prompt: v.prompt, thanks: v.thanks, label: v.label, color: v.color, position: v.position,
-        kinds: v.kinds, ask_email: v.ask_email, ask_rating: v.ask_rating, is_open: v.is_open };
+        kinds: v.kinds, ask_email: v.ask_email, ask_rating: v.ask_rating, is_open: v.is_open, public_track: v.public_track };
     }
     function paint() {  // redraw the preview from the form, without saving
       var v = Object.assign({}, cur, cur.role === 'member' ? {} : values());
@@ -1922,5 +2056,74 @@
       if (e.key === 'Enter' && e.target.matches('[data-ac]')) { e.preventDefault(); view.querySelector('[data-ac-add]').click(); }
     });
     return { ready: load(), destroy: function () { if (dirty) save(); } };
+  });
+})();
+
+/* ===== t.html ===== */
+(function () {
+  var esc = UI.esc;
+  var PRIO = { low: [1, 'Low'], medium: [2, 'Medium'], high: [3, 'High'], urgent: [4, 'Urgent'] };
+  var STORY = { draft: 'Being written up', ready: 'Ready to build', in_progress: 'Being built', shipped: 'Shipped' };
+
+  UI.page('t', { title: 'Track your feedback', chrome: false }, function (view, ctx) {
+    var token = ctx.args[0] || '', d = null;
+    view.innerHTML = '<div class="tk"><div class="ui-skel" style="height:420px"></div></div>';
+
+    function meter(p) {
+      var lv = PRIO[p] ? PRIO[p][0] : 0;
+      return '<span class="tk-meter ' + esc(p) + '" aria-hidden="true">' + [1, 2, 3, 4].map(function (i) { return '<i class="' + (i <= lv ? 'on' : '') + '"></i>'; }).join('') + '</span>';
+    }
+    function confetti() {
+      var colors = [d.board.color, '#ff5a1f', '#0f8a5f', '#f5b400', '#7c3aed'], out = '';
+      for (var i = 0; i < 22; i++) out += '<i style="left:' + (4 + i * 4.3) + '%;background:' + colors[i % colors.length] + ';animation-delay:' + (i % 7) * 0.12 + 's"></i>';
+      return '<span class="bits">' + out + '</span>';
+    }
+    function draw() {
+      var b = d.board, e = d.entry, closed = d.stage === 'closed';
+      document.title = 'Your feedback · ' + b.name;
+      view.innerHTML = '<div class="tk" style="--pc:' + esc(b.color) + '">' +
+        '<div class="tk-top"><span class="mark">' + UI.icon('chat') + '</span><div><div class="eyebrow">// feedback tracker</div><b>' + esc(b.name) + '</b></div>' +
+          (b.site_url ? '<a class="ui-btn sm" href="' + esc(b.site_url) + '" rel="noopener">' + UI.icon('external') + '<span class="lbl">Back to ' + esc(PX.host(b.site_url).split('/')[0]) + '</span></a>' : '') + '</div>' +
+        (d.stage === 'done' ? '<section class="ui-card tk-done">' + confetti() + '<h2>' + (e.kind === 'bug' ? 'Fixed!' : 'Done!') + '</h2><p>Thank you for helping make ' + esc(b.name) + ' better.</p></section>' : '') +
+        '<section class="ui-card"><div class="tk-head">' + PX.kind(e.kind) + '<span class="mono small">sent ' + esc(UI.fmtDate(e.created)) + '</span><span class="ui-spacer"></span>' + PX.stage(d.stage) + '</div>' +
+          '<p class="tk-quote">' + esc(e.message) + '</p>' +
+          '<ol class="tk-steps" aria-label="Progress: ' + esc(d.stage_label) + '">' + d.steps.map(function (s) {
+            var cls = closed ? '' : (s.done ? 'done' : '') + (s.current ? ' current' : '');
+            return '<li class="' + cls + '"' + (s.current && !closed ? ' aria-current="step"' : '') + '><span class="dot">' + (s.done && !closed ? UI.icon('check') : '') + '</span>' + esc(s.label) + '</li>';
+          }).join('') + '</ol>' +
+          (closed ? '<div class="tk-closed">' + UI.icon('archive') + '<span>The team closed this one for now. It isn\'t on the plan at the moment, but it\'s kept, and you can still reply below.</span></div>' : '') +
+          '<dl class="tk-facts"><div><dt>Priority</dt><dd>' + (e.priority ? meter(e.priority) + esc(PRIO[e.priority] ? PRIO[e.priority][1] : e.priority) : '<span class="muted">Not set yet</span>') + '</dd></div>' +
+            '<div><dt>On the plan</dt><dd>' + (d.story ? esc(d.story.title) + ' <span class="muted small">· ' + esc(STORY[d.story.status] || d.story.status) + '</span>' : '<span class="muted">Not yet</span>') + '</dd></div>' +
+            '<div><dt>Asked for by</dt><dd>' + (d.supporters ? 'You and ' + UI.plural(d.supporters, 'other person', 'other people') : 'You') + '</dd></div></dl></section>' +
+        '<section class="ui-card"><h3>' + UI.icon('pulse') + 'Updates</h3><div data-tl>' + PX.timeline(d.updates) + '</div></section>' +
+        (b.is_open ? '<section class="ui-card tk-reply"><h3>' + UI.icon('chat') + 'Add a detail or answer the team</h3><form data-reply novalidate>' +
+          '<label class="ui-field"><textarea name="text" maxlength="2000" aria-label="Your reply" placeholder="Anything to add? Screenshots can\'t be attached here, but a description helps a lot."></textarea></label>' +
+          '<div class="ui-error" data-err hidden></div><div class="ui-row"><button class="ui-btn send" type="submit">' + UI.icon('arrow') + 'Send to the team</button></div></form></section>' : '') +
+        '<p class="tk-note">' + UI.icon('lock') + '<span>This page is just for you: anyone with this link can see it, so keep it to yourself. Bookmark it to come back; it updates as the team works.</span></p>' +
+        '<div class="tk-foot"><a href="' + esc(PX.base()) + '" target="_blank" rel="noopener"><img src="_/theme/icon.svg" alt="">Feedback by Prepsto</a></div></div>';
+    }
+
+    view.addEventListener('submit', function (ev) {
+      if (!ev.target.matches('[data-reply]')) return;
+      ev.preventDefault();
+      var f = ev.target, err = f.querySelector('[data-err]'), text = f.querySelector('textarea').value.trim();
+      err.hidden = true;
+      if (text.length < 2) { err.textContent = 'Write a few words first.'; err.hidden = false; return; }
+      UI.busy(f.querySelector('[type=submit]'), UI.api('track_reply', token, text)).then(function (r) {
+        d.updates = r.updates;
+        view.querySelector('[data-tl]').innerHTML = PX.timeline(d.updates);
+        f.querySelector('textarea').value = '';
+        UI.toast('Sent to the team', 'ok');
+      }, function (ex) { err.textContent = ex.message; err.hidden = false; });
+    });
+
+    return UI.api('track_get', token).then(function (r) {
+      d = r;
+      PX.mine.seen(token, new Date().toISOString());
+      draw();
+    }, function (e) {
+      view.innerHTML = '<div class="tk"><section class="ui-card" style="text-align:center;padding:34px 24px"><img src="_/theme/icon.svg" alt="" style="width:48px;height:48px;border-radius:12px;margin-bottom:14px">' +
+        '<h2>Tracking link not found</h2><p class="muted">' + esc(e.message) + '</p><a class="ui-btn" href="#landing">What is Prepsto?</a></section></div>';
+    });
   });
 })();

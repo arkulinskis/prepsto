@@ -9,7 +9,7 @@ import datetime as dt
 from anvil.tables import app_tables
 
 from . import common as C
-from . import Insights
+from . import Insights, Tracking
 
 SITE = "https://lumen-notes.example"
 
@@ -106,8 +106,44 @@ def fill(board, owner, is_demo=False):
             page_url=SITE + page, context={"screen": "1440x900" if hours % 2 else "390x844",
                                             "browser": "Chrome 129" if hours % 3 else "Safari 18", "lang": "en"},
             status=status, priority=prio, tags=list(ai["tags"][:2]), starred=star,
-            story=stories.get(story), ai=ai, created=when, updated=when, is_demo=is_demo)
+            story=stories.get(story), ai=ai, created=when, updated=when, is_demo=is_demo,
+            track=Tracking.new_token(), reply_waiting=hours == 95)
+        _timeline(e, owner, hours, when, now)
         if hours == 26:
             app_tables.comments.add_row(author=owner, entry=e, body="Asked Jonas for the folder name. Happens only with nested folders.",
                                    created=when + dt.timedelta(hours=2), is_demo=is_demo)
     return len(ENTRIES)
+
+
+# Public replies the team wrote to the sender (their tracking page), by "hours ago" of the entry.
+REPLIES = {
+    26: ("Sorry about this, Jonas. We found the cause (renaming a nested folder) and a fix is being built now. "
+         "Your notes are safe in our backups: we'll restore them for your teammate today.", None),
+    95: ("Thanks Lea! Shared notebooks are planned for the next release. We'll post here as soon as there's a beta.",
+         "Amazing, happy to beta test with my team of 6!"),
+    300: ("Tag and date filters are live! Open Search and look for the new Filters button.", None),
+}
+
+
+def _timeline(e, owner, hours, when, now):
+    """A believable history for one sample message: received, triaged, planned, done, plus a few replies."""
+    def at(h):
+        t = when + dt.timedelta(hours=h)
+        return t if t < now else now - dt.timedelta(minutes=5)
+    Tracking.log(e, "received", when=when)
+    status = e["status"]
+    if e["priority"]:
+        Tracking.log(e, "priority", e["priority"], author=owner, when=at(min(1, hours * .1)))
+    if status in ("reviewing", "planned", "done"):
+        Tracking.log(e, "status", "reviewing", author=owner, when=at(min(2, hours * .15)))
+    if e["story"] is not None:
+        Tracking.log(e, "story", e["story"]["title"], author=owner, when=at(min(3, hours * .2)))
+    if status in ("planned", "done"):
+        Tracking.log(e, "status", "planned", author=owner, when=at(min(4, hours * .25)))
+    reply = REPLIES.get(hours)
+    if reply:
+        Tracking.log(e, "reply", text=reply[0], author=owner, when=at(hours * .4))
+        if reply[1]:
+            Tracking.log(e, "sender", text=reply[1], when=at(hours * .55))
+    if status == "done":
+        Tracking.log(e, "status", "done", author=owner, when=at(hours * .7))

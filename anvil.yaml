@@ -100,6 +100,11 @@ db_schema:
         width: 200
       name: is_demo
       type: bool
+    - admin_ui:
+        order: 16
+        width: 200
+      name: public_track
+      type: bool
     indexes: []
     server: full
     title: Boards
@@ -243,6 +248,21 @@ db_schema:
       name: assignee
       target: users
       type: link_single
+    - admin_ui:
+        order: 18
+        width: 200
+      name: track
+      type: string
+    - admin_ui:
+        order: 19
+        width: 200
+      name: track_seen
+      type: datetime
+    - admin_ui:
+        order: 20
+        width: 200
+      name: reply_waiting
+      type: bool
     indexes: []
     server: full
     title: Entries
@@ -501,6 +521,55 @@ db_schema:
     indexes: []
     server: full
     title: Stories
+  updates:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: entry
+      target: entries
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: board
+      target: boards
+      type: link_single
+    - admin_ui:
+        order: 2
+        width: 200
+      name: kind
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: value
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: text
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: author
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 6
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 7
+        width: 200
+      name: is_demo
+      type: bool
+    indexes: []
+    server: full
+    title: Updates
   users:
     client: none
     columns:
@@ -612,7 +681,7 @@ native_deps:
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
     \    if (!ours) return;\n    document.querySelectorAll('link[rel~=\"icon\"]').forEach(function (l) { if (l !== ours) l.remove();\
     \ });\n  }\n  keep();\n  document.addEventListener('DOMContentLoaded', keep);\n  window.addEventListener('load', keep);\n\
-    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=08f3564798\">\n<script src=\"_/theme/app.js?v=42d7225891\"\
+    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=714575a6e8\">\n<script src=\"_/theme/app.js?v=8ae417da66\"\
     ></script>\n"
 package_name: Prepsto
 runtime_options:

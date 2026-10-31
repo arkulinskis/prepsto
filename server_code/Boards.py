@@ -12,7 +12,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Insights, Samples, DemoData
+from . import Insights, Samples, DemoData, Tracking
 
 KINDS = {"bug": "Bug", "idea": "Idea", "praise": "Praise", "question": "Question", "other": "Other"}
 DEFAULT_KINDS = ["bug", "idea", "praise", "question"]
@@ -52,7 +52,8 @@ def board_dict(b, counts=True, me=None):
          "label": b["label"] or DEFAULTS["label"], "color": b["color"] or DEFAULTS["color"],
          "position": b["position"] or "right", "kinds": list(b["kinds"] or DEFAULT_KINDS),
          "ask_email": b["ask_email"] is not False, "ask_rating": b["ask_rating"] is not False,
-         "is_open": b["is_open"] is not False, "is_sample": bool(b["is_sample"]), "created": C.iso(b["created"])}
+         "is_open": b["is_open"] is not False, "is_sample": bool(b["is_sample"]), "created": C.iso(b["created"]),
+         "public_track": b["public_track"] is not False}
     if counts:
         rows = app_tables.entries.search(board=b)
         d["total"] = len(rows)
@@ -93,7 +94,8 @@ def ensure_starter(me):
     b = app_tables.boards.add_row(owner=me, name="Sample: Lumen Notes", slug=new_slug(), site_url=Samples.SITE,
                                   prompt="What would make Lumen Notes better for you?", thanks=DEFAULTS["thanks"],
                                   label="Feedback", color="#2b59ff", position="right", kinds=DEFAULT_KINDS + ["other"],
-                                  ask_email=True, ask_rating=True, is_open=True, is_sample=True, created=C.now(), is_demo=False)
+                                  ask_email=True, ask_rating=True, is_open=True, is_sample=True, created=C.now(), is_demo=False,
+                                  public_track=True)
     Samples.fill(b, me, is_demo=False)
 
 
@@ -113,6 +115,7 @@ def _clean(data):
     out["ask_email"] = bool(data.get("ask_email", True))
     out["ask_rating"] = bool(data.get("ask_rating", True))
     out["is_open"] = bool(data.get("is_open", True))
+    out["public_track"] = bool(data.get("public_track", True))
     if out["site_url"] and not re.match(r"^https?://", out["site_url"]):
         out["site_url"] = "https://" + out["site_url"]
     return out
@@ -171,6 +174,7 @@ def delete_board_rows(b):
         n.delete()
     for m in app_tables.members.search(board=b):
         m.delete()
+    Tracking.delete_rows(board=b)
     for s in app_tables.stories.search(board=b):
         for c in app_tables.comments.search(story=s):
             c.delete()
@@ -193,7 +197,7 @@ def widget_config(slug):
         return C.fail("This feedback link doesn't exist (any more).")
     d = board_dict(b, counts=False)
     return C.ok(board={k: d[k] for k in ("name", "slug", "site_url", "prompt", "thanks", "label", "color", "kinds",
-                                         "ask_email", "ask_rating", "is_open")}, kinds=KINDS)
+                                         "ask_email", "ask_rating", "is_open", "public_track")}, kinds=KINDS)
 
 
 @anvil.server.callable
@@ -223,8 +227,11 @@ def widget_submit(slug, data):
     context = {k: C.text(ctx.get(k), 200) for k in ("screen", "browser", "lang", "referrer") if ctx.get(k)}
     ai = Insights.analyze(message, kind, rating)
     prio = "high" if ai["urgency"] == "high" else ""
-    app_tables.entries.add_row(board=b, kind=kind, message=message, rating=rating, email=email or None,
-                               name=C.text(data.get("name"), 60) or None, page_url=C.text(data.get("page"), 300) or None,
-                               context=context, status="new", priority=prio, tags=[], starred=False, story=None, ai=ai,
-                               created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]))
-    return C.ok(thanks=b["thanks"] or DEFAULTS["thanks"])
+    e = app_tables.entries.add_row(board=b, kind=kind, message=message, rating=rating, email=email or None,
+                                   name=C.text(data.get("name"), 60) or None, page_url=C.text(data.get("page"), 300) or None,
+                                   context=context, status="new", priority=prio, tags=[], starred=False, story=None, ai=ai,
+                                   created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]), track=Tracking.new_token(),
+                                   reply_waiting=False)
+    Tracking.log(e, "received")
+    on = Tracking.tracking_on(b)
+    return C.ok(thanks=b["thanks"] or DEFAULTS["thanks"], track=e["track"] if on else None)

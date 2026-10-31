@@ -13,6 +13,11 @@ Keep this list current: it is the first thing read before every change.
 - **The panel** (`#f/<code>`): kind chips (Bug / Idea / Praise / Question / Other, chosen per link), message, optional 1-5 stars,
   optional email, honeypot against bots, a thank-you screen. Phone-first. Rate-limited (12 per hour per browser session).
 - **Embedded** (`#f/<code>/embed/<page url>`): the same panel filling a slide-in frame on the creator's site, with a close button.
+- **Follow it (closed loop):** after sending, a private **tracking link** (`#t/<token>`, "Track my feedback" on the
+  thank-you screen). It shows the steps Received → Under review → Planned → In progress → Done (or "Closed for now"), the
+  priority the team gave it, the story it became ("On the plan") and how many others asked for the same thing, a timeline of
+  every change and the team's public replies, and a box to add details or answer the team. The panel remembers each person's
+  messages in their browser ("Your feedback · 3", with a dot for new updates). The demo has one at `#t/demo`.
 - **The widget** (`assets/widget.js`, served at `https://prepsto.com/_/theme/widget.js`): one script tag adds a floating
   button (colour, label, left/right) that slides the panel in; `data-button="false"` + any `[data-prepsto-open]` element for
   your own button; `Prepsto.open()` / `Prepsto.close()`. No cookies, nothing loaded until opened.
@@ -26,11 +31,17 @@ Keep this list current: it is the first thing read before every change.
 - **Feedback drawer**: the message, who/when/page/device/rating, status and priority, tags (+ suggested tags), Insights
   (sentiment, urgency, theme, summary), star, link to a story or "Draft a story from this", team comments, similar feedback,
   archive, delete.
+- **Updates for the sender** (in the drawer, marked *public*): the sender's timeline, "They last checked …", a reply box
+  (they see it on their tracking page; a reply to a New message moves it to Reviewing), "Copy their tracking link" and "Email it
+  to them" (a mailto: with the link). Status, priority, story links and story status (Ready / In progress / Shipped) are added
+  to their timeline automatically. When the sender answers, the owner and the assignee get a bell notification and the inbox row
+  says **Sender replied** until someone answers. Team comments stay private. Per link: "Let people follow their feedback" (on by default).
 - **Stories** (`#stories`) and the **story editor** (`#story/<id>`): title, As a / I want / So that with a live sentence,
   acceptance criteria, priority, estimate, notes; client feedback (add / unlink), supporting comments; autosaves;
   "Redraft from feedback"; **Export**: Markdown, plain text, Gherkin, Jira markup, CSV, AI-ready JSON (copy or download).
-- **Links** (`#links`, `#links/<id>`, `#links/new`): create and edit links (name, website, question, kinds, colour, button
-  text and side, thank-you text, rating/email on or off, open/closed) with a live preview; install code tabs (script, link,
+- **Links** (`#links`, `#links/<id>`, `#links/new`): create and edit links (name, website, question, kinds in your order
+  (the first is picked when the panel opens), colour, button text and side, thank-you text, rating/email on or off,
+  open/closed, tracking on/off), up to 60 per account with a live preview; install code tabs (script, link,
   own button, HTML link); new code (rotates the public code), re-run insights, delete.
 - **Team workspaces:** each link has its owner plus invited teammates (Links → Team card). The owner invites by email
   (the invite appears on the invitee's Overview and bell when they sign in with that email) and can copy an invite link
