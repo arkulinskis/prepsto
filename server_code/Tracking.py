@@ -31,6 +31,16 @@ def new_token():
     raise Exception("Could not make a unique tracking code")
 
 
+def available():
+    """True once the database has the tracking columns (the Schema Mismatch was accepted in Anvil)."""
+    try:
+        len(app_tables.updates.search(kind="received"))
+        len(app_tables.entries.search(track="-"))
+        return True
+    except Exception:
+        return False
+
+
 def tracking_on(board):
     return board is not None and C.col(board, "public_track") is not False
 

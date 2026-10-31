@@ -11,7 +11,7 @@ import datetime as dt
 from anvil.tables import app_tables
 
 from . import common as C
-from . import Samples
+from . import Samples, Tracking
 
 DEMO_SLUG = "demo"
 DEMO_TRACK = "demo"
@@ -32,8 +32,14 @@ def state():
 
 def ensure_loaded():
     """Called by the public panel and the landing page: loads the demo once, unless an admin removed it."""
-    if state() == "never" or (state() == "loaded" and C.get_setting("demo_version", 1) != DEMO_VERSION):
+    st = state()
+    if st == "never":
         load()
+    elif st == "loaded":
+        if app_tables.boards.get(slug=DEMO_SLUG) is None:  # lost (e.g. a reload that failed half-way): bring it back
+            load()
+        elif C.get_setting("demo_version", 1) != DEMO_VERSION and Tracking.available():
+            load()  # upgrade once, only when the database has the new columns
 
 
 def load():
@@ -49,7 +55,8 @@ def load():
                                   label="Feedback", color="#2b59ff", position="right",
                                   kinds=["bug", "idea", "praise", "question", "other"], ask_email=True, ask_rating=True,
                                   is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True)
-    Samples.fill(b, users[0], is_demo=True)
+    tracking = Tracking.available()
+    Samples.fill(b, users[0], is_demo=True, tracking=tracking)
     for u in users[1:]:
         app_tables.members.add_row(board=b, user=u, email=u["email"], role="member", status="active", token=None,
                                    invited_by=users[0], created=C.now() - dt.timedelta(days=18),
@@ -60,16 +67,21 @@ def load():
         app_tables.comments.add_row(author=users[2], entry=urgent, body="@Maya Chen can you check the rename code path?",
                                     mentions=[users[1].get_id()], created=C.now() - dt.timedelta(hours=20), is_demo=True)
     lea = [e for e in app_tables.entries.search(board=b) if (e["message"] or "").startswith("Let me invite")]
-    if lea:
+    if lea and tracking:
         lea[0]["track"] = DEMO_TRACK  # the landing page's "See what the sender sees" (#t/demo)
     C.set_setting("demo", "loaded")
-    C.set_setting("demo_version", DEMO_VERSION)
+    if tracking:
+        C.set_setting("demo_version", DEMO_VERSION)
     return counts()
 
 
 def remove(remember=True):
     for name in DEMO_TABLES:
-        for r in getattr(app_tables, name).search(is_demo=True):
+        try:
+            rows = list(getattr(app_tables, name).search(is_demo=True))
+        except Exception:  # a table that isn't in the database yet (new schema not accepted)
+            continue
+        for r in rows:
             r.delete()
     for u in app_tables.users.search(is_demo=True):
         u.delete()
@@ -81,5 +93,8 @@ def remove(remember=True):
 def counts():
     out = {"users": len(app_tables.users.search(is_demo=True))}
     for name in DEMO_TABLES:
-        out[name] = len(getattr(app_tables, name).search(is_demo=True))
+        try:
+            out[name] = len(getattr(app_tables, name).search(is_demo=True))
+        except Exception:
+            out[name] = 0
     return out
