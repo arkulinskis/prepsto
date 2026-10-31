@@ -32,7 +32,7 @@ def new_token():
 
 
 def tracking_on(board):
-    return board is not None and board["public_track"] is not False
+    return board is not None and C.col(board, "public_track") is not False
 
 
 def ensure_track(r):
@@ -108,6 +108,10 @@ def supporters(r):
 
 def team_view(r, me):
     """What the drawer shows about the sender's side."""
+    try:
+        ensure_track(r)
+    except Exception:  # tracking columns not in the database yet
+        return {"on": False, "token": "", "seen": None, "stage": stage(r), "updates": [], "waiting": False}
     return {"on": tracking_on(r["board"]), "token": ensure_track(r), "seen": C.iso(r["track_seen"]),
             "stage": stage(r), "updates": timeline(r, for_team=True, me=me), "waiting": bool(r["reply_waiting"])}
 

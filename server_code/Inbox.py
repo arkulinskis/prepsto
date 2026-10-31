@@ -23,7 +23,7 @@ def entry_dict(r):
             "tags": list(r["tags"] or []), "starred": bool(r["starred"]),
             "story": {"id": s.get_id(), "title": s["title"]} if s is not None else None,
             "ai": r["ai"] or {}, "created": C.iso(r["created"]), "updated": C.iso(r["updated"]),
-            "reply_waiting": bool(r["reply_waiting"]), "stage": Tracking.stage(r),
+            "reply_waiting": bool(C.col(r, "reply_waiting")), "stage": Tracking.stage(r),
             "assignee": {"id": r["assignee"].get_id(), "name": C.name_of(r["assignee"])} if r["assignee"] is not None else None}
 
 

@@ -77,6 +77,14 @@ def name_of(user):
     return user["display_name"] or (user["email"] or "Someone").split("@")[0].capitalize()
 
 
+def col(row, key, default=None):
+    """A column that may not exist yet (new columns before the Schema Mismatch is accepted in Anvil)."""
+    try:
+        return row[key]
+    except Exception:
+        return default
+
+
 def row_by_id(table, row_id):
     """get_by_id that returns None for a missing or malformed id (ids come from the browser)."""
     if not isinstance(row_id, str) or not row_id:

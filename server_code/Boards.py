@@ -53,7 +53,7 @@ def board_dict(b, counts=True, me=None):
          "position": b["position"] or "right", "kinds": list(b["kinds"] or DEFAULT_KINDS),
          "ask_email": b["ask_email"] is not False, "ask_rating": b["ask_rating"] is not False,
          "is_open": b["is_open"] is not False, "is_sample": bool(b["is_sample"]), "created": C.iso(b["created"]),
-         "public_track": b["public_track"] is not False}
+         "public_track": Tracking.tracking_on(b)}
     if counts:
         rows = app_tables.entries.search(board=b)
         d["total"] = len(rows)
@@ -94,8 +94,7 @@ def ensure_starter(me):
     b = app_tables.boards.add_row(owner=me, name="Sample: Lumen Notes", slug=new_slug(), site_url=Samples.SITE,
                                   prompt="What would make Lumen Notes better for you?", thanks=DEFAULTS["thanks"],
                                   label="Feedback", color="#2b59ff", position="right", kinds=DEFAULT_KINDS + ["other"],
-                                  ask_email=True, ask_rating=True, is_open=True, is_sample=True, created=C.now(), is_demo=False,
-                                  public_track=True)
+                                  ask_email=True, ask_rating=True, is_open=True, is_sample=True, created=C.now(), is_demo=False)
     Samples.fill(b, me, is_demo=False)
 
 
@@ -140,11 +139,19 @@ def save_board(board_id, data):
         b = owned_board(board_id, me)
         if b is None:
             return C.fail("That link doesn't exist, or it isn't yours.")
-        b.update(**d)
+        try:
+            b.update(**d)
+        except Exception:  # public_track not in the database yet (Schema Mismatch not accepted)
+            d.pop("public_track", None)
+            b.update(**d)
     else:
         if len(my_boards(me, owned_only=True)) >= MAX_BOARDS:
             return C.fail("You can have up to %d links. Delete one you no longer use." % MAX_BOARDS)
-        b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
+        try:
+            b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
+        except Exception:
+            d.pop("public_track", None)
+            b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
     return C.ok(board=board_dict(b, me=me))
 
 
@@ -191,7 +198,10 @@ def delete_board_rows(b):
 @anvil.server.callable
 def widget_config(slug):
     """What the panel needs to draw itself. Anyone can call it with a code."""
-    DemoData.ensure_loaded()
+    try:
+        DemoData.ensure_loaded()
+    except Exception as ex:  # never let the demo break real panels (e.g. new columns not accepted in Anvil yet)
+        print("demo load failed:", ex)
     b = app_tables.boards.get(slug=C.text(slug, 20).lower()) if slug else None
     if b is None:
         return C.fail("This feedback link doesn't exist (any more).")
@@ -227,11 +237,15 @@ def widget_submit(slug, data):
     context = {k: C.text(ctx.get(k), 200) for k in ("screen", "browser", "lang", "referrer") if ctx.get(k)}
     ai = Insights.analyze(message, kind, rating)
     prio = "high" if ai["urgency"] == "high" else ""
-    e = app_tables.entries.add_row(board=b, kind=kind, message=message, rating=rating, email=email or None,
-                                   name=C.text(data.get("name"), 60) or None, page_url=C.text(data.get("page"), 300) or None,
-                                   context=context, status="new", priority=prio, tags=[], starred=False, story=None, ai=ai,
-                                   created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]), track=Tracking.new_token(),
-                                   reply_waiting=False)
-    Tracking.log(e, "received")
-    on = Tracking.tracking_on(b)
-    return C.ok(thanks=b["thanks"] or DEFAULTS["thanks"], track=e["track"] if on else None)
+    row = dict(board=b, kind=kind, message=message, rating=rating, email=email or None,
+               name=C.text(data.get("name"), 60) or None, page_url=C.text(data.get("page"), 300) or None,
+               context=context, status="new", priority=prio, tags=[], starred=False, story=None, ai=ai,
+               created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]))
+    try:
+        e = app_tables.entries.add_row(track=Tracking.new_token(), reply_waiting=False, **row)
+        Tracking.log(e, "received")
+    except Exception as ex:  # the tracking columns aren't in the database yet (Schema Mismatch not accepted): still save it
+        print("tracking unavailable:", ex)
+        app_tables.entries.add_row(**row)
+        return C.ok(thanks=b["thanks"] or DEFAULTS["thanks"], track=None)
+    return C.ok(thanks=b["thanks"] or DEFAULTS["thanks"], track=e["track"] if Tracking.tracking_on(b) else None)

@@ -48,8 +48,7 @@ def load():
                                   thanks="Thank you! This is the Prepsto demo, so nothing will happen with it, but now you know how it feels.",
                                   label="Feedback", color="#2b59ff", position="right",
                                   kinds=["bug", "idea", "praise", "question", "other"], ask_email=True, ask_rating=True,
-                                  is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True,
-                                  public_track=True)
+                                  is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True)
     Samples.fill(b, users[0], is_demo=True)
     for u in users[1:]:
         app_tables.members.add_row(board=b, user=u, email=u["email"], role="member", status="active", token=None,
