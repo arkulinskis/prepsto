@@ -95,7 +95,11 @@ def ensure_starter(me):
                                   prompt="What would make Lumen Notes better for you?", thanks=DEFAULTS["thanks"],
                                   label="Feedback", color="#2b59ff", position="right", kinds=DEFAULT_KINDS + ["other"],
                                   ask_email=True, ask_rating=True, is_open=True, is_sample=True, created=C.now(), is_demo=False)
-    Samples.fill(b, me, is_demo=False)
+    try:
+        Samples.fill(b, me, is_demo=False)
+    except Exception as ex:  # tracking columns not accepted yet: fill without them
+        print("starter sample with tracking failed:", ex)
+        Samples.fill(b, me, is_demo=False, tracking=False)
 
 
 def _clean(data):

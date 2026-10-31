@@ -86,7 +86,7 @@ STORIES = {
 }
 
 
-def fill(board, owner, is_demo=False):
+def fill(board, owner, is_demo=False, tracking=True):
     """Add the sample entries, stories and comments to `board`. Returns the number of entries."""
     now = C.now()
     stories = {}
@@ -107,8 +107,9 @@ def fill(board, owner, is_demo=False):
                                             "browser": "Chrome 129" if hours % 3 else "Safari 18", "lang": "en"},
             status=status, priority=prio, tags=list(ai["tags"][:2]), starred=star,
             story=stories.get(story), ai=ai, created=when, updated=when, is_demo=is_demo,
-            track=Tracking.new_token(), reply_waiting=hours == 95)
-        _timeline(e, owner, hours, when, now)
+            **({"track": Tracking.new_token(), "reply_waiting": hours == 95} if tracking else {}))
+        if tracking:
+            _timeline(e, owner, hours, when, now)
         if hours == 26:
             app_tables.comments.add_row(author=owner, entry=e, body="Asked Jonas for the folder name. Happens only with nested folders.",
                                    created=when + dt.timedelta(hours=2), is_demo=is_demo)

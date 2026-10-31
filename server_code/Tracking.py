@@ -46,6 +46,14 @@ def log(r, kind, value="", text="", author=None, when=None):
     """One public timeline line for entry r."""
     if r is None or kind not in KINDS:
         return None
+    try:
+        return _add(r, kind, value, text, author, when)
+    except Exception as ex:  # a timeline line must never block triage (e.g. the updates table not accepted yet)
+        print("tracking log failed:", ex)
+        return None
+
+
+def _add(r, kind, value, text, author, when):
     return app_tables.updates.add_row(entry=r, board=r["board"], kind=kind, value=C.text(value, 140),
                                       text=C.text(text, 2000, multiline=True), author=author,
                                       created=when or C.now(), is_demo=bool(r["is_demo"]))
