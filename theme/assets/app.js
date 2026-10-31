@@ -1426,7 +1426,7 @@
         '<label class="ui-field"><span>Name <em>(only you see it)</em></span><input type="text" name="name" value="' + esc(b.name) + '" maxlength="60" required placeholder="e.g. My app – beta"></label>' +
         '<label class="ui-field"><span>Website <em>(optional)</em></span><input type="url" name="site_url" value="' + esc(b.site_url) + '" maxlength="200" placeholder="https://myapp.com"></label>' +
         '<label class="ui-field"><span>The question at the top</span><input type="text" name="prompt" value="' + esc(b.prompt) + '" maxlength="140"></label>' +
-        '<div class="ui-field"><span>Kinds of feedback</span><div class="lk-kinds">' + Object.keys(PX.KINDS).map(function (k) {
+        '<div class="ui-field"><span>Kinds of feedback <em>(the first one is picked when the panel opens)</em></span><div class="lk-kinds">' + b.kinds.concat(Object.keys(PX.KINDS).filter(function (k) { return b.kinds.indexOf(k) < 0; })).map(function (k) {
           return '<label><input type="checkbox" name="kind_' + k + '"' + (b.kinds.indexOf(k) >= 0 ? ' checked' : '') + '><span>' + UI.icon(PX.KINDS[k][1]) + PX.KINDS[k][0] + '</span></label>';
         }).join('') + '</div></div>' +
         '<div class="lk-two"><div class="ui-field"><span>Colour</span><div class="lk-swatches">' + SWATCHES.map(function (c) {
@@ -1510,7 +1510,7 @@
     }
     function values() {
       var f = view.querySelector('[data-form]'), v = UI.formData(f);
-      v.kinds = Object.keys(PX.KINDS).filter(function (k) { return v['kind_' + k]; });
+      v.kinds = Array.prototype.map.call(f.querySelectorAll('.lk-kinds input:checked'), function (i) { return i.name.slice(5); });
       return { name: v.name, site_url: v.site_url, prompt: v.prompt, thanks: v.thanks, label: v.label, color: v.color, position: v.position,
         kinds: v.kinds, ask_email: v.ask_email, ask_rating: v.ask_rating, is_open: v.is_open };
     }

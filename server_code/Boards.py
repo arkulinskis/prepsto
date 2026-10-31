@@ -19,7 +19,7 @@ DEFAULT_KINDS = ["bug", "idea", "praise", "question"]
 DEFAULTS = {"prompt": "How can we make this better?", "thanks": "Thank you! We read every message.",
             "label": "Feedback", "color": "#2b59ff", "position": "right"}
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
-MAX_BOARDS = 25
+MAX_BOARDS = 60
 SUBMITS_PER_HOUR = 12
 
 
@@ -106,8 +106,10 @@ def _clean(data):
     color = C.text(data.get("color"), 7)
     out["color"] = color if re.match(r"^#[0-9a-fA-F]{6}$", color) else DEFAULTS["color"]
     out["position"] = "left" if data.get("position") == "left" else "right"
-    kinds = [k for k in (data.get("kinds") or []) if k in KINDS]
-    out["kinds"] = [k for k in KINDS if k in kinds]  # keep a stable order
+    out["kinds"] = []
+    for k in (data.get("kinds") or []):  # the creator's order: the first kind is picked when the panel opens
+        if k in KINDS and k not in out["kinds"]:
+            out["kinds"].append(k)
     out["ask_email"] = bool(data.get("ask_email", True))
     out["ask_rating"] = bool(data.get("ask_rating", True))
     out["is_open"] = bool(data.get("is_open", True))

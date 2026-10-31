@@ -612,7 +612,7 @@ native_deps:
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
     \    if (!ours) return;\n    document.querySelectorAll('link[rel~=\"icon\"]').forEach(function (l) { if (l !== ours) l.remove();\
     \ });\n  }\n  keep();\n  document.addEventListener('DOMContentLoaded', keep);\n  window.addEventListener('load', keep);\n\
-    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=08f3564798\">\n<script src=\"_/theme/app.js?v=5ab0494788\"\
+    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=08f3564798\">\n<script src=\"_/theme/app.js?v=42d7225891\"\
     ></script>\n"
 package_name: Prepsto
 runtime_options:
