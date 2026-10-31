@@ -603,7 +603,7 @@ metadata:
   title: 'Prepsto: customer feedback to user stories'
 name: Prepsto
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=75aca7af77\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
+  head_html: "<script src=\"_/theme/legal-kit.js?v=12fa8f8742\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
     \ initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#ffffff\">\n<meta name=\"apple-mobile-web-app-capable\"\
     \ content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"\
     https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap\"\
