@@ -135,7 +135,11 @@ def team_view(r, me):
 
 
 def delete_rows(entry=None, board=None):
-    for u in (app_tables.updates.search(entry=entry) if entry is not None else app_tables.updates.search(board=board)):
+    try:
+        rows = list(app_tables.updates.search(entry=entry) if entry is not None else app_tables.updates.search(board=board))
+    except Exception:  # the updates table isn't in the database yet
+        return
+    for u in rows:
         u.delete()
 
 
