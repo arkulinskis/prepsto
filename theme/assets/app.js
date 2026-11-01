@@ -1478,16 +1478,25 @@
     bandLead: 'Give them a place to say it. It takes about a minute.'
   };
 
+  // The product, working (CSS-only loop): the panel on your site → your inbox, sorted → a user story with their words
   function heroArt() {
-    var I = UI.icon;
-    return '<div class="lp-art" aria-hidden="true"><div class="win"><div class="bar"><i></i><i></i><i></i><span>your-app.com/editor</span></div>' +
-      '<div class="site"><b></b><i></i><i style="width:85%"></i><i style="width:70%"></i><i style="width:90%"></i><i style="width:55%"></i></div>' +
-      '<div class="panel"><h4>How can we make this better?</h4><div class="chips"><span>' + I('bug') + 'Bug</span><span class="on">' + I('bulb') + 'Idea</span><span>' + I('praise') + 'Praise</span></div>' +
-      '<div class="msg">Would love a dark mode for the editor, I write late at night</div><div class="stars">★★★★<span style="color:var(--c-line)">★</span></div><div class="send">Send feedback</div></div>' +
-      '<span class="fab">' + I('chat') + 'Feedback</span></div>' +
-      '<div class="story"><div class="top"><span class="px-kind idea">' + I('story') + 'Story</span><span class="px-prio high">! high</span><span class="ui-spacer"></span><span class="mono small faint">3 client quotes</span></div>' +
-      '<p>As a <b>night-time writer</b>, I want <b>a dark theme for the editor</b>, so that <b>my eyes can rest</b>.</p>' +
-      '<ul><li>' + I('check') + 'Toggle in settings, remembered per device</li><li>' + I('check') + 'Follows the system theme by default</li></ul></div></div>';
+    var I = UI.icon, join = '<div class="lp-join">' + I('arrow') + '</div>';
+    var row = function (kind, label, text, meta, cls) { return '<div class="lp-row2 ' + (cls || '') + '"><span class="px-kind ' + kind + '">' + I(kind === 'bug' ? 'bug' : kind === 'idea' ? 'bulb' : 'praise') + label + '</span><span>' + text + '<small>' + meta + '</small></span></div>'; };
+    return '<div class="lp-demo" aria-hidden="true">' +
+      '<div class="lp-pane"><h5><span>1 · On your site</span><b>your-app.com</b></h5><div class="lp-panel"><h4>How can we make this better?</h4>' +
+        '<div class="chips"><span>' + I('bug') + 'Bug</span><span class="on">' + I('bulb') + 'Idea</span><span>' + I('praise') + 'Praise</span></div>' +
+        '<div class="msg"><span>Would love a dark mode for the editor,&nbsp;</span><span>I write late at night</span></div>' +
+        '<div class="stars">★★★★<span style="color:var(--c-line)">★</span></div><div class="send">Send feedback</div></div></div>' + join +
+      '<div class="lp-pane"><h5><span>2 · Your inbox</span><b>sorted</b></h5><div class="lp-inbox">' +
+        row('idea', 'Idea', 'Dark mode for the editor', 'just now · editor · 2 similar', 'new') +
+        row('bug', 'Bug', 'Export cuts the last page', '2 h · export · 5 reports') +
+        row('idea', 'Idea', 'Keyboard shortcut for save', 'yesterday · editor') +
+        row('praise', 'Praise', '"The new search is so fast"', 'yesterday · search') + '</div></div>' + join +
+      '<div class="lp-pane"><h5><span>3 · A story to build</span><b>3 quotes</b></h5><div class="lp-story">' +
+        '<div class="top"><span class="px-kind idea">' + I('story') + 'Story</span><span class="px-prio high">! high</span></div>' +
+        '<p>As a <b>night-time writer</b>, I want <b>a dark theme for the editor</b>, so that <b>my eyes can rest</b>.</p>' +
+        '<ul><li>' + I('check') + 'Toggle in settings, remembered per device</li><li>' + I('check') + 'Follows the system theme by default</li></ul>' +
+        '<q>I write late at night</q></div></div></div>';
   }
 
   UI.page('landing', { title: 'Customer feedback to user stories' }, function (view, ctx) {
@@ -1497,11 +1506,11 @@
         '<a class="ui-btn lg" href="#f/demo">' + UI.icon('chat') + 'Try the panel</a>';
     var snippet = '<script src="https://prepsto.com/_/theme/widget.js" data-prepsto="k7m2xq9" async></' + 'script>';
     view.innerHTML =
-      '<section class="lp-hero"><div class="ui-wrap"><div>' +
-        '<div class="eyebrow">' + esc(C.eyebrow) + '</div><h1>' + C.title + '</h1><p class="lp-lead">' + esc(C.lead) + '</p>' +
-        '<div class="lp-cta">' + primary + '</div>' +
-        '<div class="lp-proof">' + C.proof.map(function (p) { return '<span>' + UI.icon('check') + esc(p) + '</span>'; }).join('') + '</div>' +
-        '<div class="lp-snip"><small>// the whole installation</small><pre class="px-code">' + PX.highlight(snippet) + '</pre></div>' +
+      '<section class="lp-hero"><div class="ui-wrap"><div class="lp-top">' +
+        '<div><div class="eyebrow">' + esc(C.eyebrow) + '</div><h1>' + C.title + '</h1>' +
+        '<div class="lp-snip"><small>// the whole installation</small><pre class="px-code">' + PX.highlight(snippet) + '</pre></div></div>' +
+        '<div><p class="lp-lead">' + esc(C.lead) + '</p><div class="lp-cta">' + primary + '</div>' +
+        '<div class="lp-proof">' + C.proof.map(function (p) { return '<span>' + UI.icon('check') + esc(p) + '</span>'; }).join('') + '</div></div>' +
       '</div>' + heroArt() + '</div></section>' +
       '<section class="lp-section" id="how"><div class="ui-wrap"><div class="lp-head"><div class="eyebrow">// how it works</div><h2>' + esc(C.stepsTitle) + '</h2><p>' + esc(C.stepsLead) + '</p></div>' +
         '<div class="lp-steps">' + C.steps.map(function (s, i) { return '<div class="lp-step"><span class="n">0' + (i + 1) + '</span><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p></div>'; }).join('') + '</div></div></section>' +
