@@ -543,6 +543,21 @@
   PX.senti = function (ai) { return ai && ai.sentiment ? '<span class="px-senti ' + esc(ai.sentiment) + '" title="Sentiment (' + esc(ai.provider || 'rules') + ')"><i></i>' + esc(ai.sentiment) + '</span>' : ''; };
   PX.stars = function (n) { if (!n) return ''; var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '<span>★</span>'; return '<span class="px-stars" title="' + n + ' out of 5">' + s + '</span>'; };
   PX.who = function (e) { return e.name || (e.email ? e.email.split('@')[0] : 'Anonymous'); };
+  // "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/141.0 ..." -> "Chrome 141 · Windows"
+  PX.ua = function (ua) {
+    ua = ua || '';
+    if (ua.indexOf('Mozilla/') !== 0) return ua;
+    var m, b = '';
+    if ((m = ua.match(/Edg(?:A|iOS)?\/(\d+)/))) b = 'Edge ' + m[1];
+    else if ((m = ua.match(/OPR\/(\d+)/))) b = 'Opera ' + m[1];
+    else if ((m = ua.match(/SamsungBrowser\/(\d+)/))) b = 'Samsung Internet ' + m[1];
+    else if ((m = ua.match(/(?:Firefox|FxiOS)\/(\d+)/))) b = 'Firefox ' + m[1];
+    else if ((m = ua.match(/(?:Chrome|CriOS)\/(\d+)/))) b = 'Chrome ' + m[1];
+    else if ((m = ua.match(/Version\/(\d+)[.\d]* (?:Mobile\/\S+ )?Safari\//))) b = 'Safari ' + m[1];
+    var os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'ChromeOS'
+      : /Windows/.test(ua) ? 'Windows' : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '';
+    return [b, os].filter(Boolean).join(' · ') || 'Browser';
+  };
   PX.host = function (url) { try { var u = new URL(url); return u.host + (u.pathname === '/' ? '' : u.pathname); } catch (e) { return url || ''; } };
 
   /* Links and snippets for a board. On prepsto.com: https://prepsto.com/#f/<slug> */
@@ -769,7 +784,7 @@
           '<dt>Link</dt><dd>' + esc(e.board) + '</dd>' +
           (e.rating ? '<dt>Rating</dt><dd>' + PX.stars(e.rating) + '</dd>' : '') +
           (e.page_url ? '<dt>Page</dt><dd class="mono">' + esc(e.page_url) + '</dd>' : '') +
-          (c.screen || c.browser ? '<dt>Device</dt><dd class="small muted">' + esc([c.screen, c.lang, c.browser].filter(Boolean).join(' · ')) + '</dd>' : '') + '</dl>' +
+          (c.screen || c.browser ? '<dt>Device</dt><dd class="small muted" title="' + esc(c.browser || '') + '">' + esc([PX.ua(c.browser), c.screen, c.lang].filter(Boolean).join(' · ')) + '</dd>' : '') + '</dl>' +
         '<div class="px-controls"><label class="ui-field"><span class="small">Status</span><select data-set="status">' +
           PX.STATUSES.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === e.status ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label>' +
           '<label class="ui-field"><span class="small">Priority</span><select data-set="priority">' +

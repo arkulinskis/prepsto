@@ -111,6 +111,33 @@ def _cap(s):
     return s[:1].upper() + s[1:] if s else s
 
 
+# How people start a wish ("I'd love a focus mode"), and what's left of it in "I want ...".
+_WISH_LEADS = [
+    (r"(?:i wish|it would be (?:great|nice|awesome|cool|helpful|amazing) if) (?:i|we) could\s+", "to be able to "),
+    (r"(?:i'?d|i would|we'?d|we would|would) (?:really |so )?(?:love|like) (?:it )?if (?:you|there) "
+     r"(?:could add|added|was|were|had)\s+", ""),
+    (r"(?:i'?d|i would|we'?d|we would|would) (?:really |so )?(?:love|like)(?: to (?:see|have|get))?\s+", ""),
+    (r"it would be (?:great|nice|awesome|cool|helpful|amazing) (?:to (?:see|have|get)|if (?:you could add|you added|"
+     r"there (?:was|were)|we had))\s+", ""),
+    (r"i wish (?:there (?:was|were)|you had|we had)\s+", ""),
+    (r"(?:can|could) (?:you|we) (?:please )?(?:add|have|get|make)\s+", ""),
+    (r"please (?:add|make|let us have)\s+", ""),
+    (r"please,?\s+", ""),
+    (r"(?:we|i) (?:really )?(?:need|want)\s+", ""),
+]
+
+
+def _wish(s):
+    """'I'd love a focus mode' -> 'a focus mode', so a story reads 'I want a focus mode'."""
+    s = (s or "").strip().replace("’", "'")
+    s = re.sub(r"^(?:hi|hey|hello)(?: there| team)?[,!.\s]+", "", s, flags=re.I)
+    for pat, rep in _WISH_LEADS:
+        t = re.sub("^" + pat, rep, s, count=1, flags=re.I)
+        if t != s:
+            return t
+    return s
+
+
 def draft_story(entries, board_name=""):
     """A first draft of a user story from a few pieces of feedback. entries: list of dicts
     {kind, message, rating, ai}. Returns {title, persona, goal, benefit, acceptance, notes, source}."""
@@ -151,10 +178,11 @@ def draft_story(entries, board_name=""):
         acceptance = ["The answer is visible where the question comes up (hint, empty state or help link)",
                       "Support can link to one clear page for this question"]
     else:
-        goal = _cap(summary)[:140]
+        wish = _wish(summary)
+        goal = _cap(wish)[:140]
         goal = goal[:1].lower() + goal[1:]
         benefit = "I get more value from %s" % (board_name or "the product")
-        title = _cap(summary)[:80]
+        title = _cap(wish)[:80]
         acceptance = ["Given the situation in the linked feedback, when I use the new feature, then it works as described",
                       "It works on phone and desktop", "The change is announced to the people who asked for it"]
     if theme == "performance":
