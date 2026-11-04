@@ -1,0 +1,11 @@
+<div class="sy-q">
+  <div class="ui-row">
+    <anvil-component type="Label" name="kind_badge"></anvil-component>
+    <anvil-component type="Label" name="stars_badge"></anvil-component>
+    <anvil-component type="Label" name="meta" prop:role='["small-muted"]'></anvil-component>
+    <span class="ui-spacer"></span>
+    <anvil-component type="Button" name="unlink_button" prop:text="Unlink" prop:tooltip="Unlink from this story" prop:role='["btn", "btn-ghost", "btn-icon", "ic-x"]'></anvil-component>
+  </div>
+  <blockquote><anvil-component type="Label" name="message" prop:role='["sy-q-msg"]' bind:text="self.item['message']"></anvil-component></blockquote>
+  <anvil-component type="RepeatingPanel" name="sub_panel" prop:item_template="Prepsto.Items.TagChip" prop:role='["sy-q-subs"]'></anvil-component>
+</div>

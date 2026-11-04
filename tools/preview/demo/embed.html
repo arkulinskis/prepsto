@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- A pretend customer site that installs the Prepsto widget (assets/widget.js) with the demo code.
+     Open http://localhost:8771/demo/embed.html with the dev server running, click "Feedback". -->
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lumen Notes (pretend site)</title>
+<style>
+body { margin: 0; font: 16px/1.6 Georgia, serif; background: #fbf8f2; color: #2a2621; }
+header { padding: 18px 28px; border-bottom: 1px solid #e8e0d0; font-weight: 700; }
+main { max-width: 680px; margin: 40px auto; padding: 0 20px; }
+button.own { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #2a2621; background: none; cursor: pointer; }
+</style></head>
+<body>
+<header>Lumen Notes</header>
+<main><h1>A calm place to write.</h1><p>This is a pretend customer website. The Prepsto script below adds the floating "Feedback" button.</p>
+<p><button class="own" data-prepsto-open>Or open it from my own button</button></p></main>
+<script src="/_/theme/widget.js" data-prepsto="demo" data-color="#e85d2a" data-label="Feedback" data-position="right" async></script>
+</body>
+</html>

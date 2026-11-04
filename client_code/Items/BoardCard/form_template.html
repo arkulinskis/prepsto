@@ -1,0 +1,16 @@
+<article class="ib-card" draggable="true" tabindex="0">
+  <div class="ui-row">
+    <anvil-component type="Label" name="kind_badge"></anvil-component>
+    <anvil-component type="Label" name="prio_badge"></anvil-component>
+    <span class="px-starred" anvil:name="star_mark" title="Starred"><i class="ic ic-star"></i></span>
+    <span class="ui-spacer"></span>
+    <anvil-component type="Label" name="assignee" prop:role='["px-who"]'></anvil-component>
+    <anvil-component type="Label" name="when" prop:role='["mono-faint"]'></anvil-component>
+  </div>
+  <anvil-component type="Label" name="message" prop:role='["ib-card-msg"]' bind:text="self.item['message']"></anvil-component>
+  <div class="ui-row">
+    <anvil-component type="Label" name="senti_badge"></anvil-component>
+    <anvil-component type="RepeatingPanel" name="tags_panel" prop:item_template="Prepsto.Items.TagChip" prop:role='["contents"]'></anvil-component>
+    <anvil-component type="Label" name="story_tag" prop:text="story" prop:role='["px-tag", "ic-story"]'></anvil-component>
+  </div>
+</article>

@@ -1,0 +1,13 @@
+<div class="ak-row">
+  <span class="ak-ic"><i class="ic ic-key"></i></span>
+  <div class="grow">
+    <div class="ui-row ak-top">
+      <anvil-component type="Label" name="name" prop:role='["px-inline", "strong"]' bind:text="self.item['name']"></anvil-component>
+      <anvil-component type="Label" name="prefix" prop:role='["px-inline", "ak-prefix"]'></anvil-component>
+      <anvil-component type="Label" name="state_badge" prop:role='["px-inline", "badge"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="access" prop:role='["ak-access"]'></anvil-component>
+    <anvil-component type="Label" name="meta" prop:role='["mono-faint"]'></anvil-component>
+  </div>
+  <anvil-component type="Button" name="revoke_button" prop:text="Revoke" prop:role='["btn", "btn-sm", "btn-danger", "ic-x"]'></anvil-component>
+</div>

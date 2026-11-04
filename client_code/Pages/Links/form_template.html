@@ -1,0 +1,119 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head">
+        <div>
+          <div class="eyebrow">// feedback links</div>
+          <anvil-component type="Label" name="title" prop:text="Links" prop:role='["page-title"]'></anvil-component>
+          <p class="muted">Each link is one feedback panel: share the link, or add one line of code to your site for a floating button.</p>
+        </div>
+      </div>
+      <nav class="lk-picker" aria-label="Your links">
+        <anvil-component type="RepeatingPanel" name="picks_panel" prop:item_template="Prepsto.Items.LinkPick" prop:role='["contents"]'></anvil-component>
+      </nav>
+
+      <div class="lk-grid">
+        <div>
+          <div class="lk-sample" anvil:name="sample_note"><i class="ic ic-info"></i> This sample link came with your account so you can explore. Delete it whenever you like.</div>
+
+          <section class="ui-card">
+            <h2 class="lk-h"><i class="ic ic-sliders"></i><anvil-component type="Label" name="settings_title" prop:role='["px-inline"]'></anvil-component></h2>
+            <div class="lk-form">
+              <anvil-component type="Label" name="ro_note" prop:role='["lk-ro", "ic-lock"]'></anvil-component>
+              <label class="ui-field"><span>Name <em>(only you see it)</em></span><anvil-component type="TextBox" name="name_box" prop:placeholder="e.g. My app – beta"></anvil-component></label>
+              <label class="ui-field"><span>Website <em>(optional)</em></span><anvil-component type="TextBox" name="site_box" prop:type="url" prop:placeholder="https://myapp.com"></anvil-component></label>
+              <label class="ui-field"><span>The question at the top</span><anvil-component type="TextBox" name="prompt_box"></anvil-component></label>
+              <div class="ui-field"><span>Kinds of feedback <em>(the first one is picked when the panel opens)</em></span>
+                <div role="group" aria-label="Kinds of feedback"><anvil-component type="RepeatingPanel" name="kinds_panel" prop:item_template="Prepsto.Items.KindToggle" prop:role='["lk-kinds"]'></anvil-component></div>
+              </div>
+              <div class="lk-two">
+                <div class="ui-field"><span>Colour</span>
+                  <div class="lk-swatches" role="group" aria-label="Colour">
+                    <anvil-component type="RepeatingPanel" name="swatches_panel" prop:item_template="Prepsto.Items.Swatch" prop:role='["contents"]'></anvil-component>
+                    <input type="color" anvil:dom-node="color_input" anvil:on-dom:input="self.color_input" aria-label="Any colour">
+                  </div>
+                </div>
+                <label class="ui-field"><span>Button text</span><anvil-component type="TextBox" name="label_box"></anvil-component></label>
+              </div>
+              <div class="lk-two">
+                <label class="ui-field"><span>Button position</span><anvil-component type="DropDown" name="position_box"></anvil-component></label>
+                <label class="ui-field"><span>Thank-you message</span><anvil-component type="TextBox" name="thanks_box"></anvil-component></label>
+              </div>
+              <div class="lk-switches">
+                <anvil-component type="CheckBox" name="rating_box" prop:text="Ask for a star rating"></anvil-component>
+                <anvil-component type="CheckBox" name="email_box" prop:text="Ask for an email (optional for them)"></anvil-component>
+                <anvil-component type="CheckBox" name="open_box" prop:text="Open: accepting feedback"></anvil-component>
+                <anvil-component type="CheckBox" name="track_box" prop:text="Let people follow their feedback (a private tracking link with its status, priority and your replies)"></anvil-component>
+              </div>
+              <div class="ui-row" anvil:name="save_row">
+                <anvil-component type="Button" name="save_button" prop:role='["btn", "btn-primary", "ic-check"]'></anvil-component>
+                <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-card lk-install" anvil:name="install_part">
+            <h2 class="lk-h"><i class="ic ic-code"></i>Put it on your site</h2>
+            <nav class="ui-tabs" aria-label="Ways to install">
+              <anvil-component type="RepeatingPanel" name="tabs_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+            </nav>
+            <div anvil:name="link_part">
+              <div class="lk-url">
+                <anvil-component type="TextBox" name="url_box"></anvil-component>
+                <anvil-component type="Button" name="copy_link_button" prop:text="Copy" prop:role='["btn", "ic-copy"]'></anvil-component>
+                <a class="ui-btn" anvil:name="open_link" href="#" target="_blank" rel="noopener"><i class="ic ic-external"></i>Open</a>
+              </div>
+              <p class="lk-step">Share it anywhere: an email, a QR code, your app's menu or help page. It opens the panel full screen.</p>
+            </div>
+            <div anvil:name="code_part">
+              <pre class="px-code"><anvil-component type="Label" name="code" prop:role='["px-pre"]'></anvil-component></pre>
+              <div class="ui-row lk-copy-row"><anvil-component type="Button" name="copy_code_button" prop:text="Copy code" prop:role='["btn", "btn-sm", "btn-primary", "ic-copy"]'></anvil-component></div>
+              <div anvil:name="step_script">
+                <p class="lk-step"><b>01</b>Paste it before <code>&lt;/body&gt;</code> on every page (or in your site builder's "custom code").</p>
+                <div class="lk-step"><b>02</b><anvil-component type="Label" name="step2" prop:role='["px-inline"]'></anvil-component></div>
+              </div>
+              <p class="lk-step" anvil:name="step_button">No floating button: any element with <code>data-prepsto-open</code> opens the panel, or call <code>Prepsto.open()</code> from your code.</p>
+              <p class="lk-step" anvil:name="step_html">A plain link for emails, docs or places where scripts aren't allowed.</p>
+            </div>
+          </section>
+
+          <section class="ui-card" anvil:name="team_part">
+            <h2 class="lk-h"><i class="ic ic-users"></i>Team <anvil-component type="Label" name="team_count" prop:role='["px-inline", "lk-h-note"]'></anvil-component></h2>
+            <anvil-component type="RepeatingPanel" name="team_panel" prop:item_template="Prepsto.Items.PersonRow" prop:role='["lk-team"]'></anvil-component>
+            <div class="lk-invite" anvil:name="invite_row">
+              <anvil-component type="TextBox" name="invite_box" prop:type="email" prop:placeholder="teammate@company.com"></anvil-component>
+              <anvil-component type="Button" name="invite_button" prop:text="Invite" prop:role='["btn", "btn-primary", "ic-plus"]'></anvil-component>
+            </div>
+            <anvil-component type="Label" name="team_hint" prop:role='["ui-hint-label"]'></anvil-component>
+          </section>
+
+          <section class="ui-card" anvil:name="manage_part">
+            <h2 class="lk-h"><i class="ic ic-shield"></i>Manage</h2>
+            <anvil-component type="Label" name="code_line" prop:role='["mono-muted", "lk-code-line"]'></anvil-component>
+            <div class="lk-danger">
+              <anvil-component type="Button" name="inbox_button" prop:text="See its feedback" prop:role='["btn", "btn-sm", "ic-inbox"]'></anvil-component>
+              <anvil-component type="Button" name="newcode_button" prop:text="New code" prop:role='["btn", "btn-sm", "ic-refresh"]'></anvil-component>
+              <anvil-component type="Button" name="reanalyze_button" prop:text="Re-run insights" prop:role='["btn", "btn-sm", "ic-sparkle"]'></anvil-component>
+              <anvil-component type="Button" name="delete_button" prop:text="Delete link" prop:role='["btn", "btn-sm", "btn-danger", "ic-trash"]'></anvil-component>
+            </div>
+            <p class="ui-hint" anvil:name="manage_hint">A new code stops the old link and snippet working (handy if spam finds it). Deleting removes all its feedback and stories.</p>
+          </section>
+        </div>
+
+        <div>
+          <section class="lk-preview">
+            <h2 class="lk-h"><i class="ic ic-eye"></i>Live preview <span class="mono small faint lk-h-note">try it, nothing is sent</span></h2>
+            <div class="lk-browser">
+              <div class="lk-bar"><i></i><i></i><i></i><anvil-component type="Label" name="host" prop:role='["lk-host"]'></anvil-component></div>
+              <div class="lk-stage ui-gridbg right" anvil:name="stage">
+                <div class="fake"><i style="width:40%"></i><i style="width:75%"></i><i style="width:62%"></i></div>
+                <div class="panelbox"><anvil-component type="Prepsto.Components.FeedbackPanel" name="preview_panel"></anvil-component></div>
+                <span class="lk-fab" anvil:name="fab"><i class="ic ic-chat"></i><anvil-component type="Label" name="fab_label" prop:role='["px-inline"]'></anvil-component></span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

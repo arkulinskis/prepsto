@@ -1,0 +1,11 @@
+<div class="px-comment">
+  <anvil-component type="Label" name="avatar" prop:role='["px-av", "sm"]'></anvil-component>
+  <div class="body">
+    <div class="who">
+      <anvil-component type="Label" name="author" prop:role='["strong"]' bind:text="self.item['author']"></anvil-component>
+      <anvil-component type="Label" name="when"></anvil-component>
+      <anvil-component type="Button" name="delete_button" prop:text="Delete" prop:role='["px-link-btn", "faint"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="text" prop:role='["px-comment-text"]' bind:text="self.item['body']"></anvil-component>
+  </div>
+</div>

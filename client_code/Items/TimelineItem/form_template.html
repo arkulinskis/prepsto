@@ -1,0 +1,11 @@
+<div class="px-tl-item">
+  <span class="px-tl-dot"></span>
+  <div>
+    <div class="px-tl-line">
+      <span><anvil-component type="Label" name="before" prop:role='["px-inline"]'></anvil-component><anvil-component type="Label" name="bold" prop:role='["px-inline", "strong"]'></anvil-component><anvil-component type="Label" name="after" prop:role='["px-inline"]'></anvil-component></span>
+      <anvil-component type="Label" name="when" prop:role='["px-when"]'></anvil-component>
+      <anvil-component type="Button" name="remove_button" prop:text="Remove" prop:role='["px-link-btn", "faint", "push"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="bubble" prop:role='["px-tl-bubble"]' bind:text="self.item['text']"></anvil-component>
+  </div>
+</div>

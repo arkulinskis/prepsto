@@ -1,0 +1,16 @@
+<a class="ui-card hover st-card" href="#stories">
+  <div class="ui-row">
+    <anvil-component type="Label" name="state_badge"></anvil-component>
+    <anvil-component type="Label" name="prio_badge"></anvil-component>
+    <span class="ui-spacer"></span>
+    <anvil-component type="Label" name="points" prop:role='["st-pts"]'></anvil-component>
+  </div>
+  <anvil-component type="Label" name="title" prop:role='["st-title"]' bind:text="self.item['title']"></anvil-component>
+  <anvil-component type="Label" name="sentence" prop:role='["st-as"]'></anvil-component>
+  <div class="foot">
+    <anvil-component type="Label" name="counts" prop:role='["mono-muted", "ic-chat"]'></anvil-component>
+    <anvil-component type="RepeatingPanel" name="kinds_panel" prop:item_template="Prepsto.Items.TagChip" prop:role='["contents"]'></anvil-component>
+    <span class="ui-spacer"></span>
+    <anvil-component type="Label" name="board" prop:role='["mono-faint"]' bind:text="self.item['board']"></anvil-component>
+  </div>
+</a>

@@ -1,0 +1,8 @@
+<a class="px-mine-item" href="#t" target="_blank" rel="noopener">
+  <span class="top">
+    <anvil-component type="Label" name="stage_badge"></anvil-component>
+    <span class="new" anvil:name="new_dot" title="New update"></span>
+    <anvil-component type="Label" name="when" prop:role='["px-when", "push"]'></anvil-component>
+  </span>
+  <anvil-component type="Label" name="message" prop:role='["px-mine-msg"]' bind:text="self.item['message']"></anvil-component>
+</a>

@@ -222,7 +222,11 @@ def track_reply(token, text):
 @anvil.server.callable(require_user=True)
 def post_update(entry_id, text):
     """A public reply from the team: the sender sees it on their tracking page."""
-    me = C.require_user()
+    return reply_as(C.require_user(), entry_id, text)
+
+
+def reply_as(me, entry_id, text, limit=True):
+    """post_update for `me` (limit=False: the API has its own per-key rate limit)."""
     from . import Inbox
     r = Inbox.owned_entry(entry_id, me)
     if r is None:
@@ -232,7 +236,7 @@ def post_update(entry_id, text):
     text = C.text(text, 2000, multiline=True)
     if len(text) < 2:
         return C.fail("Write something first.")
-    if C.rate_limited("update", 120, 3600):
+    if limit and C.rate_limited("update", 120, 3600):
         return C.fail("That's a lot of updates in one hour. Please try again later.")
     ensure_track(r)
     log(r, "reply", text=text, author=me)

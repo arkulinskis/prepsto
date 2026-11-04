@@ -42,7 +42,8 @@ def story_dict(s, me, full=False):
 
 def _clean(data):
     data = data if isinstance(data, dict) else {}
-    acc = [C.text(a, 300) for a in (data.get("acceptance") if isinstance(data.get("acceptance"), list) else [])]
+    raw_acc = data.get("acceptance")
+    acc = [C.text(a, 300) for a in (raw_acc if isinstance(raw_acc, list) else [])]
     pts = data.get("points")
     pts = pts if isinstance(pts, (int, float)) and not isinstance(pts, bool) and 0 <= pts <= 100 else None
     return {"title": C.text(data.get("title"), 140), "persona": C.text(data.get("persona"), 120),
@@ -56,6 +57,10 @@ def _clean(data):
 def list_stories(board_id=None, status=None):
     me = C.require_user()
     Boards.ensure_starter(me)
+    return stories_view(me, board_id, status)
+
+
+def stories_view(me, board_id=None, status=None):
     rows = []
     for b in Boards.my_boards(me):
         rows.extend(app_tables.stories.search(board=b))
@@ -71,7 +76,10 @@ def list_stories(board_id=None, status=None):
 
 @anvil.server.callable(require_user=True)
 def get_story(story_id):
-    me = C.require_user()
+    return story_view(C.require_user(), story_id)
+
+
+def story_view(me, story_id):
     s = owned_story(story_id, me)
     if s is None:
         return C.fail("That story doesn't exist (any more).")
@@ -88,7 +96,10 @@ def get_story(story_id):
 @anvil.server.callable(require_user=True)
 def create_story(board_id, entry_ids=None):
     """A new story. With entry_ids, it's drafted from that feedback (Insights.draft_story) and linked to it."""
-    me = C.require_user()
+    return create_story_as(C.require_user(), board_id, entry_ids)
+
+
+def create_story_as(me, board_id, entry_ids=None):
     entries = [Inbox.owned_entry(i, me) for i in (entry_ids or [])[:50]] if isinstance(entry_ids, list) else []
     if any(e is None for e in entries):
         return C.fail("Some of that feedback doesn't exist (any more). Reload and try again.")
@@ -118,10 +129,19 @@ def create_story(board_id, entry_ids=None):
 
 @anvil.server.callable(require_user=True)
 def save_story(story_id, data):
-    me = C.require_user()
+    return save_story_as(C.require_user(), story_id, data)
+
+
+def save_story_as(me, story_id, data, partial=False):
+    """partial=True (the API): fields that aren't sent keep their current values."""
     s = owned_story(story_id, me)
     if s is None:
         return C.fail("That story doesn't exist (any more).")
+    if partial:
+        cur = {k: s[k] for k in ("title", "persona", "goal", "benefit", "notes", "priority", "status", "points")}
+        cur["acceptance"] = list(s["acceptance"] or [])
+        cur.update({k: v for k, v in (data if isinstance(data, dict) else {}).items() if k in cur})
+        data = cur
     d = _clean(data)
     if len(d["title"]) < 2:
         return C.fail("Give the story a title (at least 2 characters).")

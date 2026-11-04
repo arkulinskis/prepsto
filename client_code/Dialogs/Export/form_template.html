@@ -1,0 +1,13 @@
+<div class="ui">
+  <h2 class="dlg-h">Export story</h2>
+  <p class="muted small">Story, acceptance criteria, supporting comments and client feedback, ready for your tracker or an AI model.</p>
+  <div class="ex-tabs" role="group" aria-label="Format">
+    <anvil-component type="RepeatingPanel" name="formats_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+  </div>
+  <pre class="px-code ex-out"><anvil-component type="Label" name="out" prop:role='["px-pre"]'></anvil-component></pre>
+  <div class="ui-row end ex-actions">
+    <anvil-component type="Button" name="close_button" prop:text="Close" prop:role='["btn", "btn-ghost"]'></anvil-component>
+    <anvil-component type="Button" name="download_button" prop:text="Download" prop:role='["btn", "ic-download"]'></anvil-component>
+    <anvil-component type="Button" name="copy_button" prop:text="Copy" prop:role='["btn", "btn-primary", "ic-copy"]'></anvil-component>
+  </div>
+</div>

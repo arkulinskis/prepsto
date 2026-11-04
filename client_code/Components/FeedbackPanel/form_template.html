@@ -1,0 +1,76 @@
+---
+custom_component: true
+properties: []
+toolbox_item:
+  title: Feedback panel
+  group: Prepsto
+help_text: |
+  The feedback panel people fill in (the public #f page, the widget's frame, and the live preview on the Links page).
+  Call setup(board, preview=..., embed=..., page=..., on_close=..., on_sent=...) once, then update(board) to redraw a preview.
+---
+<div class="px-panel">
+  <div class="px-panel-head">
+    <span class="mark"><i class="ic ic-chat"></i></span>
+    <div class="px-panel-title">
+      <anvil-component type="Label" name="prompt" prop:role='["px-panel-prompt"]'></anvil-component>
+      <anvil-component type="Label" name="board_name" prop:role='["px-panel-sub"]'></anvil-component>
+    </div>
+    <anvil-component type="Button" name="close_button" prop:text="Close" prop:role='["btn", "btn-ghost", "btn-icon", "ic-x", "px-x"]'></anvil-component>
+  </div>
+  <anvil-component type="Button" name="mine_bar" prop:role='["px-mine-bar", "ic-pulse"]'></anvil-component>
+
+  <div class="px-form" anvil:name="form_part">
+    <div role="group" aria-label="Kind of feedback" anvil:name="kinds_part">
+      <anvil-component type="RepeatingPanel" name="kinds_panel" prop:item_template="Prepsto.Items.KindChip" prop:role='["px-kinds"]'></anvil-component>
+    </div>
+    <label class="ui-field"><span>Your message</span>
+      <anvil-component type="TextArea" name="message_box" prop:role='["px-message"]'></anvil-component>
+    </label>
+    <div class="ui-field" anvil:name="rate_part"><span>How do you rate it overall?</span>
+      <div class="px-rate" role="group" aria-label="Rating">
+        <button type="button" data-n="1" aria-label="1 out of 5" anvil:name="s1" anvil:on-dom:click="self.star_click">★</button>
+        <button type="button" data-n="2" aria-label="2 out of 5" anvil:name="s2" anvil:on-dom:click="self.star_click">★</button>
+        <button type="button" data-n="3" aria-label="3 out of 5" anvil:name="s3" anvil:on-dom:click="self.star_click">★</button>
+        <button type="button" data-n="4" aria-label="4 out of 5" anvil:name="s4" anvil:on-dom:click="self.star_click">★</button>
+        <button type="button" data-n="5" aria-label="5 out of 5" anvil:name="s5" anvil:on-dom:click="self.star_click">★</button>
+        <anvil-component type="Label" name="rate_label" prop:role='["px-rate-label"]'></anvil-component>
+      </div>
+    </div>
+    <label class="ui-field" anvil:name="email_part"><span>Email <em>(optional, for a reply)</em></span>
+      <anvil-component type="TextBox" name="email_box" prop:type="email" prop:placeholder="you@example.com"></anvil-component>
+    </label>
+    <div class="px-hp" aria-hidden="true"><anvil-component type="TextBox" name="hp_box"></anvil-component></div>
+    <anvil-component type="Label" name="error" prop:role='["msg-error"]' prop:visible="false"></anvil-component>
+    <anvil-component type="Button" name="send_button" prop:text="Send feedback" prop:role='["btn", "btn-block", "px-send", "ic-arrow"]'></anvil-component>
+  </div>
+
+  <div class="px-closed" anvil:name="closed_part"><i class="ic ic-lock"></i><p>This feedback panel is closed for now.</p></div>
+
+  <div class="px-thanks" anvil:name="thanks_part">
+    <span class="tick"><i class="ic ic-check"></i></span>
+    <h2>Sent</h2>
+    <anvil-component type="Label" name="thanks_text" prop:role='["px-thanks-text"]'></anvil-component>
+    <div class="px-follow" anvil:name="follow_part">
+      <b>Follow what happens next</b>
+      <p>See its status and priority, read the team's replies and answer them. This link is just for you.</p>
+      <div class="ui-row">
+        <a class="ui-btn sm send" anvil:name="track_link" href="#" target="_blank" rel="noopener"><i class="ic ic-pulse"></i>Track my feedback</a>
+        <anvil-component type="Button" name="copy_track_button" prop:text="Copy link" prop:role='["btn", "btn-sm", "ic-copy"]'></anvil-component>
+      </div>
+    </div>
+    <anvil-component type="Button" name="again_button" prop:text="Send another" prop:role='["btn", "btn-sm"]'></anvil-component>
+  </div>
+
+  <div class="px-mine" anvil:name="mine_part">
+    <h3>Your feedback</h3>
+    <anvil-component type="RepeatingPanel" name="mine_panel" prop:item_template="Prepsto.Items.MineItem" prop:role='["px-mine-list"]'></anvil-component>
+    <anvil-component type="Label" name="mine_empty" prop:role='["small-muted"]' prop:text="Nothing to show: the team may have removed it."></anvil-component>
+    <p class="small faint px-mine-note">Kept in this browser only. Open one to see its progress and the team's replies.</p>
+    <anvil-component type="Button" name="write_button" prop:text="Write new feedback" prop:role='["btn", "btn-sm", "ic-plus"]'></anvil-component>
+  </div>
+
+  <div class="px-panel-foot">
+    <anvil-component type="Label" name="foot_text" prop:role='["px-foot-text"]'></anvil-component>
+    <a anvil:name="home_link" href="#landing" target="_blank" rel="noopener"><img src="_/theme/icon.svg" alt="">Prepsto</a>
+  </div>
+</div>

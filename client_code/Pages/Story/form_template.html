@@ -1,0 +1,71 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="sy-top">
+        <a class="ui-btn ghost sm" href="#stories"><i class="ic ic-back"></i>Stories</a>
+        <anvil-component type="Label" name="meta" prop:role='["mono-faint"]'></anvil-component>
+        <span class="ui-spacer"></span>
+        <anvil-component type="Label" name="saved" prop:text="Saved" prop:role='["sy-saved"]'></anvil-component>
+        <anvil-component type="DropDown" name="status_box"></anvil-component>
+        <anvil-component type="Button" name="export_button" prop:text="Export" prop:role='["btn", "btn-primary", "ic-download"]'></anvil-component>
+        <anvil-component type="Button" name="more_button" prop:text="More" prop:role='["btn", "btn-icon", "ic-more"]'></anvil-component>
+      </div>
+      <div class="sy-grid">
+        <div>
+          <section class="ui-card">
+            <anvil-component type="TextArea" name="title_box" prop:placeholder="Story title" prop:role='["sy-title"]'></anvil-component>
+            <anvil-component type="Label" name="source" prop:role='["mono-faint", "sy-source"]'></anvil-component>
+            <div class="sy-sentence">
+              <label><span>As a</span><anvil-component type="TextBox" name="persona_box" prop:placeholder="who? e.g. returning customer"></anvil-component></label>
+              <label><span>I want</span><anvil-component type="TextArea" name="goal_box" prop:placeholder="what do they want to do?" prop:role='["sy-short"]'></anvil-component></label>
+              <label><span>So that</span><anvil-component type="TextArea" name="benefit_box" prop:placeholder="why does it matter to them?" prop:role='["sy-short"]'></anvil-component></label>
+            </div>
+            <div class="sy-preview">As a <anvil-component type="Label" name="p_persona" prop:role='["px-inline", "strong"]'></anvil-component>, I want <anvil-component type="Label" name="p_goal" prop:role='["px-inline", "strong"]'></anvil-component><anvil-component type="Label" name="p_so" prop:role='["px-inline"]' prop:text=", so that "></anvil-component><anvil-component type="Label" name="p_benefit" prop:role='["px-inline", "strong"]'></anvil-component>.</div>
+          </section>
+
+          <section class="ui-card">
+            <h2 class="sy-h"><i class="ic ic-check"></i>Acceptance criteria <anvil-component type="Button" name="ac_add_button" prop:text="Add" prop:role='["btn", "btn-sm", "ic-plus", "push"]'></anvil-component></h2>
+            <anvil-component type="RepeatingPanel" name="ac_panel" prop:item_template="Prepsto.Items.AcRow" prop:role='["sy-ac"]'></anvil-component>
+            <p class="ui-hint">Write each one so it can be tested: "Given…, when…, then…" becomes a Gherkin scenario on export.</p>
+          </section>
+
+          <section class="ui-card">
+            <h2 class="sy-h"><i class="ic ic-sliders"></i>Details</h2>
+            <div class="sy-details">
+              <label class="ui-field"><span>Priority</span><anvil-component type="DropDown" name="prio_box"></anvil-component></label>
+              <label class="ui-field"><span>Estimate</span><anvil-component type="DropDown" name="points_box"></anvil-component></label>
+            </div>
+            <label class="ui-field sy-notes"><span>Notes</span><anvil-component type="TextArea" name="notes_box" prop:placeholder="Context, links, open questions"></anvil-component></label>
+          </section>
+        </div>
+
+        <div>
+          <section class="ui-card">
+            <h2 class="sy-h"><i class="ic ic-chat"></i><anvil-component type="Label" name="fb_title" prop:role='["px-inline"]'></anvil-component> <anvil-component type="Button" name="add_fb_button" prop:text="Add" prop:role='["btn", "btn-sm", "ic-plus", "push"]'></anvil-component></h2>
+            <anvil-component type="RepeatingPanel" name="quotes_panel" prop:item_template="Prepsto.Items.StoryQuote" prop:role='["sy-fb"]'></anvil-component>
+            <anvil-component type="Label" name="no_fb" prop:text="No feedback linked yet. Add some to ground the story in what customers said." prop:role='["small-muted"]'></anvil-component>
+          </section>
+
+          <section class="ui-card">
+            <h2 class="sy-h"><i class="ic ic-users"></i><anvil-component type="Label" name="cm_title" prop:role='["px-inline"]'></anvil-component></h2>
+            <anvil-component type="RepeatingPanel" name="comments_panel" prop:item_template="Prepsto.Items.Comment" prop:role='["px-comments"]'></anvil-component>
+            <anvil-component type="Label" name="no_comments" prop:text="Decisions, findings and context from your team." prop:role='["small-muted"]'></anvil-component>
+            <div class="px-addc">
+              <label class="ui-field px-grow"><span class="ui-sr">Add a comment</span><anvil-component type="TextArea" name="comment_box" prop:placeholder="Add a comment. Type @ to mention"></anvil-component></label>
+              <anvil-component type="Button" name="comment_button" prop:text="Post" prop:role='["btn", "btn-sm", "btn-primary"]'></anvil-component>
+            </div>
+          </section>
+
+          <section class="ui-card sy-ai">
+            <h2 class="sy-h"><i class="ic ic-sparkle"></i>Assist <anvil-component type="Label" name="provider" prop:role='["px-inline", "badge"]'></anvil-component></h2>
+            <p class="muted">Redraft the story from its linked feedback. Today this uses Prepsto's built-in rules; it's built so an AI model can take over the same job.</p>
+            <div class="ui-row">
+              <anvil-component type="Button" name="redraft_button" prop:text="Redraft from feedback" prop:role='["btn", "btn-sm", "ic-wand"]'></anvil-component>
+              <anvil-component type="Button" name="json_button" prop:text="AI-ready JSON" prop:role='["btn", "btn-sm", "btn-ghost", "ic-code"]'></anvil-component>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

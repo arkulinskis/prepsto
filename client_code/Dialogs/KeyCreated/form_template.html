@@ -1,0 +1,13 @@
+<div class="ui">
+  <h2 class="dlg-h">Your new key</h2>
+  <div class="ui-stack">
+    <p class="ak-warn"><i class="ic ic-info"></i><span>Copy it now: this is the only time Prepsto shows it. Keep it private, like a password. Lost it? Revoke it and make a new one.</span></p>
+    <anvil-component type="Label" name="key" prop:role='["ak-key"]'></anvil-component>
+    <div class="ui-row"><anvil-component type="Button" name="copy_button" prop:text="Copy the key" prop:role='["btn", "btn-primary", "ic-copy"]'></anvil-component></div>
+    <p class="muted small">Then, in a terminal (it asks for the key and saves it on your computer, readable only by you):</p>
+    <pre class="px-code"><anvil-component type="Label" name="setup" prop:role='["px-pre"]'></anvil-component></pre>
+    <div class="ui-row end">
+      <anvil-component type="Button" name="done_button" prop:text="Done" prop:role='["btn"]'></anvil-component>
+    </div>
+  </div>
+</div>

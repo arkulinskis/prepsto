@@ -1,0 +1,9 @@
+<div class="hm-invite">
+  <anvil-component type="Label" name="avatar" prop:role='["px-av"]'></anvil-component>
+  <div class="grow">
+    <span><anvil-component type="Label" name="who" prop:role='["px-inline", "strong"]' bind:text="self.item['from']"></anvil-component> invited you to the team of <anvil-component type="Label" name="board" prop:role='["px-inline", "strong"]' bind:text="self.item['board']"></anvil-component></span>
+    <anvil-component type="Label" name="when" prop:role='["mono-faint"]'></anvil-component>
+  </div>
+  <anvil-component type="Button" name="decline_button" prop:text="Decline" prop:role='["btn", "btn-sm", "btn-ghost"]'></anvil-component>
+  <anvil-component type="Button" name="accept_button" prop:text="Join" prop:role='["btn", "btn-sm", "btn-primary", "ic-check"]'></anvil-component>
+</div>

@@ -1,0 +1,84 @@
+---
+layout_metadata:
+  title: App frame
+  description: Header with the menu, notification bell and account button, the page in the middle, the footer and the phone tab bar
+---
+<div class="ui ui-shell">
+  <header class="ui-header">
+    <div class="ui-header-in">
+      <a class="ui-brand" anvil:name="brand" href="#landing" aria-label="Prepsto home">
+        <img src="_/theme/icon.svg" alt="" width="32" height="32"><span>Prepsto</span>
+      </a>
+      <nav class="ui-nav" aria-label="Main">
+        <anvil-component type="RepeatingPanel" name="nav_panel" prop:item_template="Prepsto.Items.NavLink" prop:role='["contents"]'></anvil-component>
+      </nav>
+      <div class="ui-header-right">
+        <div class="ui-row" anvil:name="guest_actions">
+          <a class="ui-btn ghost" href="#auth">Sign in</a>
+          <a class="ui-btn primary" href="#auth/signup">Get started</a>
+        </div>
+        <div class="ui-row hd-member" anvil:name="member_actions">
+          <span class="px-bell-wrap">
+            <anvil-component type="Button" name="bell_button" prop:text="Notifications" prop:role='["btn", "btn-ghost", "btn-icon", "ic-bell", "px-bell"]' prop:tooltip="Notifications"></anvil-component>
+            <anvil-component type="Label" name="bell_count" prop:role='["px-bell-n"]' prop:visible="false"></anvil-component>
+          </span>
+          <div class="ui-menu px-notifs" anvil:name="bell_panel">
+            <div class="px-notifs-head">
+              <b>Notifications</b>
+              <anvil-component type="Button" name="read_all_button" prop:text="Mark all read" prop:role='["px-link-btn"]'></anvil-component>
+            </div>
+            <anvil-component type="RepeatingPanel" name="notif_panel" prop:item_template="Prepsto.Items.NotifItem"></anvil-component>
+            <anvil-component type="Label" name="notif_empty" prop:role='["px-notifs-empty"]' prop:text="Nothing yet. When a teammate mentions you or assigns you feedback, it shows up here."></anvil-component>
+          </div>
+          <anvil-component type="Button" name="avatar_button" prop:role='["avatar"]' prop:tooltip="Your account"></anvil-component>
+          <div class="ui-menu" anvil:name="menu">
+            <div class="ui-menu-head">
+              <anvil-component type="Label" name="menu_name" prop:role='["menu-name"]'></anvil-component>
+              <anvil-component type="Label" name="menu_email" prop:role='["menu-email"]'></anvil-component>
+            </div>
+            <a href="#profile"><i class="ic ic-user"></i>Your profile</a>
+            <a href="#claude"><i class="ic ic-code"></i>Claude &amp; API</a>
+            <a href="#admin" anvil:name="admin_link"><i class="ic ic-shield"></i>Admin</a>
+            <div class="ui-menu-block"><span class="small muted">Appearance</span>
+              <div class="ui-seg" role="group" aria-label="Appearance">
+                <button type="button" data-theme-set="auto" anvil:name="theme_auto" anvil:on-dom:click="self.theme_click">Auto</button>
+                <button type="button" data-theme-set="light" anvil:name="theme_light" anvil:on-dom:click="self.theme_click">Light</button>
+                <button type="button" data-theme-set="dark" anvil:name="theme_dark" anvil:on-dom:click="self.theme_click">Dark</button>
+              </div>
+            </div>
+            <button type="button" anvil:on-dom:click="self.feedback_click"><i class="ic ic-chat"></i>Submit feedback</button>
+            <button type="button" data-lk-open="overview"><i class="ic ic-lock"></i>Privacy &amp; Terms</button>
+            <button type="button" anvil:on-dom:click="self.sign_out_click"><i class="ic ic-logout"></i>Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="ui-main">
+    <anvil-slot name="content"></anvil-slot>
+  </main>
+
+  <footer class="ui-footer">
+    <div class="ui-footer-in">
+      <div class="ui-footer-brand">
+        <a class="ui-brand" href="#landing"><img src="_/theme/icon.svg" alt="" width="32" height="32"><span>Prepsto</span></a>
+        <p class="muted small">Customer feedback, from one link to user stories.</p>
+      </div>
+      <div class="ui-footer-links">
+        <a href="#landing">About</a>
+        <a href="#f/demo">Try the panel</a>
+        <a href="https://prepsto.com/#f/938ktjj" target="_blank" rel="noopener" data-prepsto-open>Submit feedback</a>
+        <button type="button" data-lk-open="overview">Privacy &amp; Terms</button>
+      </div>
+      <div class="ui-footer-legal">
+        <anvil-component type="Label" name="copyright_label" prop:text="© Prepsto" prop:role='["fine-print"]'></anvil-component>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="ui-tabbar" aria-label="Main" anvil:name="tabbar">
+    <anvil-component type="RepeatingPanel" name="tab_panel" prop:item_template="Prepsto.Items.NavLink" prop:role='["contents"]'></anvil-component>
+    <a href="#profile" anvil:name="tab_profile"><i class="ic ic-user"></i><span>You</span></a>
+  </nav>
+</div>

@@ -1,0 +1,65 @@
+<anvil-form layout="Prepsto.Layouts.Bare">
+  <anvil-block slot="content">
+    <div class="tk" anvil:name="page">
+      <div class="tk-top">
+        <span class="mark"><i class="ic ic-chat"></i></span>
+        <div><div class="eyebrow">// feedback tracker</div><anvil-component type="Label" name="board_name" prop:role='["tk-board"]'></anvil-component></div>
+        <a class="ui-btn sm tk-back" anvil:name="back_link" href="#" rel="noopener"><i class="ic ic-external"></i><span class="lbl" anvil:name="back_label_box"><anvil-component type="Label" name="back_label" prop:role='["px-inline"]'></anvil-component></span></a>
+      </div>
+
+      <section class="ui-card tk-done" anvil:name="done_card">
+        <span class="bits" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <anvil-component type="Label" name="done_title" prop:role='["tk-done-title"]'></anvil-component>
+        <anvil-component type="Label" name="done_text" prop:role='["muted"]'></anvil-component>
+      </section>
+
+      <section class="ui-card">
+        <div class="tk-head">
+          <anvil-component type="Label" name="kind_badge"></anvil-component>
+          <anvil-component type="Label" name="sent" prop:role='["mono-faint"]'></anvil-component>
+          <span class="ui-spacer"></span>
+          <anvil-component type="Label" name="stage_badge"></anvil-component>
+        </div>
+        <anvil-component type="Label" name="quote" prop:role='["tk-quote"]'></anvil-component>
+        <div class="tk-steps" anvil:name="steps_box">
+          <anvil-component type="RepeatingPanel" name="steps_panel" prop:item_template="Prepsto.Items.Step" prop:role='["contents"]'></anvil-component>
+        </div>
+        <div class="tk-closed" anvil:name="closed_note"><i class="ic ic-archive"></i><span>The team closed this one for now. It isn't on the plan at the moment, but it's kept, and you can still reply below.</span></div>
+        <dl class="tk-facts">
+          <div><dt>Priority</dt><dd><span class="tk-meter" anvil:name="meter" aria-hidden="true"><i anvil:name="m1"></i><i anvil:name="m2"></i><i anvil:name="m3"></i><i anvil:name="m4"></i></span><anvil-component type="Label" name="prio_text" prop:role='["px-inline"]'></anvil-component></dd></div>
+          <div><dt>On the plan</dt><dd><anvil-component type="Label" name="story_text" prop:role='["px-inline"]'></anvil-component> <anvil-component type="Label" name="story_state" prop:role='["px-inline", "small-muted"]'></anvil-component></dd></div>
+          <div><dt>Asked for by</dt><dd><anvil-component type="Label" name="supporters" prop:role='["px-inline"]'></anvil-component></dd></div>
+        </dl>
+      </section>
+
+      <section class="ui-card">
+        <h2 class="tk-h"><i class="ic ic-pulse"></i>Updates</h2>
+        <div class="px-tl">
+          <anvil-component type="RepeatingPanel" name="timeline_panel" prop:item_template="Prepsto.Items.TimelineItem" prop:role='["contents"]'></anvil-component>
+        </div>
+        <anvil-component type="Label" name="no_updates" prop:text="Nothing yet." prop:role='["small-faint"]'></anvil-component>
+      </section>
+
+      <section class="ui-card tk-reply" anvil:name="reply_card">
+        <h2 class="tk-h"><i class="ic ic-chat"></i>Add a detail or answer the team</h2>
+        <label class="ui-field"><span class="ui-sr">Your reply</span>
+          <anvil-component type="TextArea" name="reply_box" prop:placeholder="Anything to add? Screenshots can't be attached here, but a description helps a lot."></anvil-component>
+        </label>
+        <anvil-component type="Label" name="reply_error" prop:role='["msg-error"]' prop:visible="false"></anvil-component>
+        <div class="ui-row"><anvil-component type="Button" name="reply_button" prop:text="Send to the team" prop:role='["btn", "px-send", "ic-arrow"]'></anvil-component></div>
+      </section>
+
+      <p class="tk-note"><i class="ic ic-lock"></i><span>This page is just for you: anyone with this link can see it, so keep it to yourself. Bookmark it to come back; it updates as the team works.</span></p>
+      <div class="tk-foot"><a anvil:name="home_link" href="#landing" target="_blank" rel="noopener"><img src="_/theme/icon.svg" alt="">Feedback by Prepsto</a></div>
+    </div>
+
+    <div class="tk" anvil:name="missing">
+      <section class="ui-card tk-missing">
+        <img src="_/theme/icon.svg" alt="">
+        <h1>Tracking link not found</h1>
+        <anvil-component type="Label" name="missing_text" prop:role='["muted"]'></anvil-component>
+        <a class="ui-btn" href="#landing">What is Prepsto?</a>
+      </section>
+    </div>
+  </anvil-block>
+</anvil-form>

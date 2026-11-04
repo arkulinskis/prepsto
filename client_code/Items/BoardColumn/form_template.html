@@ -1,0 +1,10 @@
+<section class="ib-col">
+  <div class="ib-col-head">
+    <anvil-component type="Label" name="status_badge"></anvil-component>
+    <anvil-component type="Label" name="count" prop:role='["mono-faint"]'></anvil-component>
+  </div>
+  <div class="ib-cards">
+    <anvil-component type="RepeatingPanel" name="cards_panel" prop:item_template="Prepsto.Items.BoardCard" prop:role='["ib-cards-list"]'></anvil-component>
+    <div class="ib-colempty" anvil:name="empty">Drop feedback here</div>
+  </div>
+</section>

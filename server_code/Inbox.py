@@ -116,6 +116,11 @@ def get_overview():
 def get_inbox(filters=None):
     me = C.require_user()
     Boards.ensure_starter(me)
+    return inbox_view(me, filters)
+
+
+def inbox_view(me, filters=None):
+    """The inbox for `me` (also the API's GET /v1/tickets)."""
     f = filters if isinstance(filters, dict) else {}
     board = Boards.team_board(f.get("board"), me) if f.get("board") else None
     rows = my_entries(me, board)
@@ -159,7 +164,11 @@ def get_inbox(filters=None):
 
 @anvil.server.callable(require_user=True)
 def get_entry(entry_id):
-    me = C.require_user()
+    return entry_view(C.require_user(), entry_id)
+
+
+def entry_view(me, entry_id):
+    """One entry with everything the drawer shows (also the API's GET /v1/tickets/<id>)."""
     r = owned_entry(entry_id, me)
     if r is None:
         return C.fail("That feedback doesn't exist (any more).")
@@ -175,7 +184,7 @@ def get_entry(entry_id):
 
 def _apply(r, changes, me):
     """Apply allowed changes to one entry. Returns an error message or None."""
-    upd = {}
+    upd: dict = {}
     if "status" in changes:
         if changes["status"] not in STATUSES:
             return "Unknown status."
@@ -217,8 +226,9 @@ def _apply(r, changes, me):
             Tracking.log(r, "status", upd["status"], author=me)
         if "priority" in upd and upd["priority"] != (before["priority"] or ""):
             Tracking.log(r, "priority", upd["priority"], author=me)
-        if upd.get("story") is not None and upd["story"] != before["story"]:
-            Tracking.log(r, "story", upd["story"]["title"], author=me)
+        new_story = upd.get("story")
+        if new_story is not None and new_story != before["story"]:
+            Tracking.log(r, "story", new_story["title"], author=me)
     return None
 
 
@@ -293,11 +303,15 @@ def reanalyze_board(board_id):
 # ------------------------------------------------------------------------------------------- comments
 @anvil.server.callable(require_user=True)
 def add_comment(target, target_id, body, mentions=None):
-    me = C.require_user()
+    return comment_as(C.require_user(), target, target_id, body, mentions)
+
+
+def comment_as(me, target, target_id, body, mentions=None, limit=True):
+    """A team comment by `me` (limit=False: the API has its own per-key rate limit)."""
     body = C.text(body, 2000, multiline=True)
     if len(body) < 1:
         return C.fail("Write something first.")
-    if C.rate_limited("comment", 120, 3600):
+    if limit and C.rate_limited("comment", 120, 3600):
         return C.fail("That's a lot of comments in one hour. Please try again later.")
     if target == "entry":
         r = owned_entry(target_id, me)

@@ -151,8 +151,8 @@ def draft_story(entries, board_name=""):
         for t in (e.get("ai") or {}).get("tags") or []:
             tags[t] = tags.get(t, 0) + 1
         kinds[e.get("kind") or "other"] = kinds.get(e.get("kind") or "other", 0) + 1
-    theme = max(tags, key=tags.get) if tags else ""
-    kind = max(kinds, key=kinds.get)
+    theme = max(tags, key=lambda x: tags[x]) if tags else ""
+    kind = max(kinds, key=lambda x: kinds[x])
     lead = entries[0]
     summary = (lead.get("ai") or {}).get("summary") or lead.get("message", "")[:100]
     persona = KIND_PERSONA.get(kind, "user")
