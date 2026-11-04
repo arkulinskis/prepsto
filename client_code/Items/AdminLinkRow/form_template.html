@@ -1,0 +1,11 @@
+<div class="ad-table ad-link-row">
+  <div>
+    <anvil-component type="Label" name="name" prop:role='["px-inline", "strong"]' bind:text="self.item['name']"></anvil-component>
+    <anvil-component type="Label" name="slug" prop:role='["px-inline", "mono-faint"]' bind:text="self.item['slug']"></anvil-component>
+    <anvil-component type="Label" name="flags" prop:role='["px-inline", "badge"]'></anvil-component>
+  </div>
+  <div><anvil-component type="Label" name="owner" prop:role='["ad-email"]'></anvil-component></div>
+  <anvil-component type="Label" name="created" prop:role='["fine-print"]'></anvil-component>
+  <anvil-component type="Label" name="total" prop:role='["mono"]'></anvil-component>
+  <anvil-component type="CheckBox" name="open_box" prop:text="Open" bind:checked="self.item['is_open']"></anvil-component>
+</div>

@@ -1,0 +1,56 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ib-head">
+        <anvil-component type="Label" name="title" prop:text="Inbox" prop:role='["page-title"]'></anvil-component>
+        <div class="ui-seg" role="group" aria-label="View">
+          <anvil-component type="Button" name="list_button" prop:text="List" prop:role='["seg", "ic-list"]'></anvil-component>
+          <anvil-component type="Button" name="board_button" prop:text="Board" prop:role='["seg", "ic-board"]'></anvil-component>
+        </div>
+        <div class="ib-search"><i class="ic ic-search"></i><anvil-component type="TextBox" name="search_box" prop:placeholder="Search messages, people, pages"></anvil-component></div>
+      </div>
+
+      <div class="ib-filters">
+        <anvil-component type="DropDown" name="board_box"></anvil-component>
+        <anvil-component type="DropDown" name="kind_box"></anvil-component>
+        <anvil-component type="DropDown" name="tag_box"></anvil-component>
+        <anvil-component type="DropDown" name="sort_box"></anvil-component>
+        <anvil-component type="Button" name="starred_button" prop:text="Starred" prop:role='["btn", "btn-sm", "ic-star"]'></anvil-component>
+        <anvil-component type="Button" name="mine_button" prop:text="Assigned to me" prop:role='["btn", "btn-sm", "ic-user"]'></anvil-component>
+        <anvil-component type="Button" name="clear_button" prop:text="Clear filters" prop:role='["btn", "btn-sm", "btn-ghost", "ic-x"]'></anvil-component>
+      </div>
+
+      <div anvil:name="list_part">
+        <nav class="ui-tabs ib-tabs" aria-label="Status">
+          <anvil-component type="RepeatingPanel" name="status_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+        </nav>
+        <div class="ib-count" anvil:name="count_part">
+          <anvil-component type="CheckBox" name="all_box" prop:text="Select all"></anvil-component>
+          <anvil-component type="Label" name="total" prop:role='["px-inline"]'></anvil-component>
+        </div>
+        <anvil-component type="RepeatingPanel" name="rows_panel" prop:item_template="Prepsto.Items.EntryRow" prop:role='["px-list"]'></anvil-component>
+        <div class="ib-more" anvil:name="more_part"><anvil-component type="Button" name="more_button" prop:text="Show more" prop:role='["btn", "btn-sm"]'></anvil-component></div>
+        <div class="ui-empty" anvil:name="empty">
+          <i class="ic ic-inbox"></i>
+          <anvil-component type="Label" name="empty_title" prop:role='["empty-title"]'></anvil-component>
+          <anvil-component type="Label" name="empty_text"></anvil-component>
+        </div>
+      </div>
+
+      <div anvil:name="board_part">
+        <p class="ib-count">Drag a card to another column to change its status. Archived feedback is hidden here.</p>
+        <anvil-component type="RepeatingPanel" name="cols_panel" prop:item_template="Prepsto.Items.BoardColumn" prop:role='["ib-board"]'></anvil-component>
+      </div>
+
+      <div class="ib-bulk" anvil:name="bulk" role="toolbar" aria-label="Selected feedback">
+        <anvil-component type="Label" name="picked_count" prop:role='["ib-bulk-n"]'></anvil-component>
+        <anvil-component type="DropDown" name="bulk_status"></anvil-component>
+        <anvil-component type="Button" name="bulk_tag" prop:text="Tag" prop:role='["btn", "btn-sm", "ic-plus"]'></anvil-component>
+        <anvil-component type="Button" name="bulk_story" prop:text="Draft a story" prop:role='["btn", "btn-sm", "btn-primary", "ic-wand"]'></anvil-component>
+        <anvil-component type="Button" name="bulk_delete" prop:text="Delete" prop:role='["btn", "btn-sm", "btn-ghost", "ic-trash"]'></anvil-component>
+        <span class="ui-spacer"></span>
+        <anvil-component type="Button" name="bulk_clear" prop:text="Clear" prop:role='["btn", "btn-sm", "btn-ghost", "ic-x"]'></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

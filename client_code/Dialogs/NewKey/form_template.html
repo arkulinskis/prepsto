@@ -1,0 +1,27 @@
+<div class="ui">
+  <h2 class="dlg-h">New API key</h2>
+  <div class="ak-form">
+    <label class="ui-field"><span>Name <em>(so you recognise it later)</em></span><anvil-component type="TextBox" name="name_box" prop:placeholder="e.g. Claude on my laptop"></anvil-component></label>
+    <div class="ui-field"><span>What it may do</span>
+      <div class="ak-scopes" role="group" aria-label="What the key may do">
+        <anvil-component type="CheckBox" name="read_box" prop:text="Read tickets, comments and stories" prop:checked="true" prop:enabled="false"></anvil-component>
+        <anvil-component type="CheckBox" name="write_box" prop:text="Update tickets and stories" prop:checked="true"></anvil-component>
+        <p class="ak-scope-note">Status, priority, tags, assignee, private team comments, drafting and editing stories. Never deletes anything.</p>
+        <anvil-component type="CheckBox" name="reply_box" prop:text="Reply to the people who sent feedback"></anvil-component>
+        <p class="ak-scope-note">Public replies they read on their tracking page, under your name. Leave this off unless you check replies before they're sent.</p>
+      </div>
+    </div>
+    <div class="ui-field"><span>Which links</span>
+      <anvil-component type="DropDown" name="links_box"></anvil-component>
+      <div class="ak-links-pick" anvil:name="links_part" role="group" aria-label="Links this key can see">
+        <anvil-component type="RepeatingPanel" name="links_panel" prop:item_template="Prepsto.Items.CheckRow" prop:role='["contents"]'></anvil-component>
+      </div>
+    </div>
+    <label class="ui-field"><span>Expires</span><anvil-component type="DropDown" name="days_box"></anvil-component></label>
+    <anvil-component type="Label" name="error" prop:role='["msg-error"]' prop:visible="false"></anvil-component>
+    <div class="ui-row end">
+      <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+      <anvil-component type="Button" name="create_button" prop:text="Create key" prop:role='["btn", "btn-primary", "ic-key"]'></anvil-component>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,69 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head">
+        <div>
+          <div class="eyebrow">// claude &amp; api</div>
+          <anvil-component type="Label" name="title" prop:text="Claude &amp; API" prop:role='["page-title"]'></anvil-component>
+          <p class="muted">Let Claude work through your feedback: read the tickets, fix what it can in your code, update their status, leave notes for your team and, if you allow it, reply to the people who sent them.</p>
+        </div>
+        <anvil-component type="Button" name="new_button" prop:text="New key" prop:role='["btn", "btn-primary", "ic-key"]'></anvil-component>
+      </div>
+
+      <ol class="ak-steps">
+        <li><b>Make a key</b>Choose what it may do and which links it sees. You can revoke it any time.</li>
+        <li><b>Connect Claude</b>One small download and two commands for Claude Code, or call the API from your own scripts.</li>
+        <li><b>Ask</b>"Work through my open Prepsto bugs" or "What are people asking for most this week?"</li>
+      </ol>
+
+      <div class="ak-grid">
+        <div>
+          <section class="ui-card">
+            <h2 class="lk-h"><i class="ic ic-key"></i>Your keys <anvil-component type="Label" name="keys_count" prop:role='["px-inline", "lk-h-note"]'></anvil-component></h2>
+            <anvil-component type="RepeatingPanel" name="keys_panel" prop:item_template="Prepsto.Items.ApiKeyRow" prop:role='["ak-list"]'></anvil-component>
+            <div class="ui-empty" anvil:name="no_keys">
+              <i class="ic ic-key"></i>
+              <h3>No keys yet</h3>
+              <p>Make one to connect Claude Code or your own scripts.</p>
+              <anvil-component type="Button" name="first_button" prop:text="Make your first key" prop:role='["btn", "btn-primary", "ic-plus"]'></anvil-component>
+            </div>
+          </section>
+
+          <section class="ui-card">
+            <h2 class="lk-h"><i class="ic ic-pulse"></i>Recent activity</h2>
+            <anvil-component type="RepeatingPanel" name="log_panel" prop:item_template="Prepsto.Items.ApiLogRow" prop:role='["ak-log"]'></anvil-component>
+            <anvil-component type="Label" name="no_log" prop:text="Nothing yet. Every request made with your keys shows up here." prop:role='["small-muted"]'></anvil-component>
+          </section>
+
+          <section class="ui-card">
+            <h2 class="lk-h"><i class="ic ic-shield"></i>Keeping it safe</h2>
+            <ul class="ak-safety">
+              <li><i class="ic ic-check"></i><span>Prepsto keeps only a fingerprint of each key, never the key itself, so it's shown once.</span></li>
+              <li><i class="ic ic-check"></i><span>A key does what you could do yourself, on the links you chose, and nothing else. Leaving a team cuts it off from that link straight away.</span></li>
+              <li><i class="ic ic-check"></i><span>It can't delete anything, and it never sees senders' email addresses or their private tracking links.</span></li>
+              <li><i class="ic ic-check"></i><span>What Claude does appears under your name. Replies to senders are off unless you allow them for that key.</span></li>
+              <li><i class="ic ic-check"></i><span>Keys expire when you chose, are limited to <anvil-component type="Label" name="rate" prop:role='["px-inline"]'></anvil-component>, and every request is logged above.</span></li>
+            </ul>
+          </section>
+        </div>
+
+        <div>
+          <section class="ui-card ak-setup">
+            <h2 class="lk-h"><i class="ic ic-terminal"></i>Connect Claude</h2>
+            <nav class="ui-tabs" aria-label="How to connect">
+              <anvil-component type="RepeatingPanel" name="tabs_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+            </nav>
+            <div class="ak-dl">
+              <a class="ui-btn sm" anvil:name="cli_link" href="_/theme/prepsto-cli.py" download="prepsto.py"><i class="ic ic-download"></i>prepsto.py (command line + MCP)</a>
+              <a class="ui-btn sm" anvil:name="skill_link" href="_/theme/prepsto-skill.md" download="SKILL.md"><i class="ic ic-download"></i>Claude Code skill</a>
+            </div>
+            <anvil-component type="Label" name="intro" prop:role='["small-muted"]'></anvil-component>
+            <pre class="px-code"><anvil-component type="Label" name="code" prop:role='["px-pre"]'></anvil-component></pre>
+            <div class="ui-row"><anvil-component type="Button" name="copy_button" prop:text="Copy" prop:role='["btn", "btn-sm", "ic-copy"]'></anvil-component></div>
+            <anvil-component type="Label" name="after" prop:role='["small-muted", "ak-after"]'></anvil-component>
+          </section>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

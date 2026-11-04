@@ -1,0 +1,117 @@
+<div class="ui px-drawer-in">
+  <div class="px-drawer-head">
+    <span class="mono small faint">Feedback</span>
+    <span class="ui-spacer"></span>
+    <anvil-component type="Button" name="close_button" prop:text="Close" prop:role='["btn", "btn-ghost", "btn-icon", "ic-x"]'></anvil-component>
+  </div>
+  <div class="px-drawer-body">
+    <div class="ui-empty" anvil:name="missing"><h3>Not found</h3><anvil-component type="Label" name="missing_text"></anvil-component></div>
+    <div class="px-drawer-content" anvil:name="body">
+      <div class="ui-row">
+        <anvil-component type="Label" name="kind_badge"></anvil-component>
+        <anvil-component type="Label" name="status_badge"></anvil-component>
+        <anvil-component type="Label" name="prio_badge"></anvil-component>
+        <span class="ui-spacer"></span>
+        <anvil-component type="Button" name="star_button" prop:text="Star" prop:tooltip="Star" prop:role='["btn", "btn-ghost", "btn-icon", "ic-star"]'></anvil-component>
+      </div>
+      <anvil-component type="Label" name="quote" prop:role='["px-quote"]'></anvil-component>
+      <dl class="px-meta">
+        <dt>From</dt><dd><anvil-component type="Label" name="who" prop:role='["px-inline"]'></anvil-component><span anvil:name="email_box"> · <a anvil:name="email_link" href="#"><anvil-component type="Label" name="email" prop:role='["px-inline"]'></anvil-component></a></span></dd>
+        <dt>When</dt><dd><anvil-component type="Label" name="when" prop:role='["px-inline"]'></anvil-component> <anvil-component type="Label" name="ago" prop:role='["px-inline", "faint"]'></anvil-component></dd>
+        <dt>Link</dt><dd><anvil-component type="Label" name="board" prop:role='["px-inline"]'></anvil-component></dd>
+        <dt anvil:name="rating_dt">Rating</dt><dd anvil:name="rating_dd"><anvil-component type="Label" name="stars_badge"></anvil-component></dd>
+        <dt anvil:name="page_dt">Page</dt><dd anvil:name="page_dd" class="mono"><anvil-component type="Label" name="page" prop:role='["px-inline"]'></anvil-component></dd>
+        <dt anvil:name="device_dt">Device</dt><dd anvil:name="device_dd" class="small muted"><anvil-component type="Label" name="device" prop:role='["px-inline"]'></anvil-component></dd>
+      </dl>
+
+      <div class="px-controls">
+        <label class="ui-field"><span class="small">Status</span><anvil-component type="DropDown" name="status_box"></anvil-component></label>
+        <label class="ui-field"><span class="small">Priority</span><anvil-component type="DropDown" name="prio_box"></anvil-component></label>
+        <label class="ui-field px-assign"><span class="small">Assigned to</span><anvil-component type="DropDown" name="assign_box"></anvil-component></label>
+      </div>
+
+      <div class="px-section">
+        <h4>Tags</h4>
+        <div class="px-tags">
+          <anvil-component type="RepeatingPanel" name="tags_panel" prop:item_template="Prepsto.Items.DrawerTag" prop:role='["contents"]'></anvil-component>
+          <anvil-component type="TextBox" name="tag_box" prop:placeholder="+ add tag" prop:role='["px-tag-input"]'></anvil-component>
+        </div>
+      </div>
+
+      <div class="px-ai">
+        <h4 class="px-ai-h"><i class="ic ic-sparkle"></i> Insights <anvil-component type="Label" name="provider" prop:role='["px-inline", "badge"]'></anvil-component></h4>
+        <div class="row">
+          <anvil-component type="Label" name="senti_badge"></anvil-component>
+          <anvil-component type="Label" name="urgency" prop:role='["px-prio"]'></anvil-component>
+          <anvil-component type="Label" name="theme" prop:role='["mono-muted"]'></anvil-component>
+        </div>
+        <div class="px-suggest" anvil:name="suggest_part">
+          <span class="small">Suggested tags:</span>
+          <anvil-component type="RepeatingPanel" name="suggest_panel" prop:item_template="Prepsto.Items.DrawerTag" prop:role='["contents"]'></anvil-component>
+        </div>
+        <anvil-component type="Label" name="summary" prop:role='["small-muted", "px-ai-p"]'></anvil-component>
+      </div>
+
+      <div class="px-section">
+        <h4><i class="ic ic-story"></i> User story</h4>
+        <div class="ui-row" anvil:name="story_part">
+          <anvil-component type="Button" name="story_button" prop:role='["btn", "btn-sm", "ic-story"]'></anvil-component>
+          <anvil-component type="Button" name="unstory_button" prop:text="Unlink" prop:role='["btn", "btn-sm", "btn-ghost"]'></anvil-component>
+        </div>
+        <div class="ui-row" anvil:name="nostory_part">
+          <anvil-component type="Button" name="draft_button" prop:text="Draft a story from this" prop:role='["btn", "btn-sm", "btn-primary", "ic-wand"]'></anvil-component>
+          <anvil-component type="DropDown" name="add_story_box" prop:role='["px-add-story"]'></anvil-component>
+        </div>
+      </div>
+
+      <div class="px-section px-public">
+        <h4><i class="ic ic-pulse"></i> Updates for the sender <anvil-component type="Label" name="public_badge" prop:text="public" prop:role='["px-inline", "badge"]'></anvil-component></h4>
+        <div anvil:name="track_off">
+          <anvil-component type="Label" name="off_text" prop:role='["small-muted"]'></anvil-component>
+          <anvil-component type="Button" name="links_button" prop:text="Turn it on in Links" prop:role='["btn", "btn-sm", "ic-link"]'></anvil-component>
+        </div>
+        <div anvil:name="track_on">
+          <div class="px-public-head">
+            <anvil-component type="Label" name="stage_badge"></anvil-component>
+            <anvil-component type="Label" name="seen" prop:role='["px-inline"]'></anvil-component>
+            <anvil-component type="Label" name="waiting" prop:text="Waiting for your reply" prop:role='["px-replied"]'></anvil-component>
+          </div>
+          <div class="px-tl">
+            <anvil-component type="RepeatingPanel" name="timeline_panel" prop:item_template="Prepsto.Items.TimelineItem" prop:role='["contents"]'></anvil-component>
+          </div>
+          <anvil-component type="Label" name="no_timeline" prop:text="Nothing yet." prop:role='["small-faint"]'></anvil-component>
+          <div class="px-addc">
+            <label class="ui-field px-grow"><span class="ui-sr">Reply to the sender</span><anvil-component type="TextArea" name="reply_box" prop:placeholder="Reply to the sender: they see this on their tracking page"></anvil-component></label>
+            <anvil-component type="Button" name="reply_button" prop:text="Send" prop:role='["btn", "btn-sm", "btn-primary"]'></anvil-component>
+          </div>
+          <div class="ui-row px-public-actions">
+            <anvil-component type="Button" name="copy_track_button" prop:text="Copy their tracking link" prop:role='["btn", "btn-sm", "ic-copy"]'></anvil-component>
+            <a class="ui-btn sm" anvil:name="mail_link" href="#"><i class="ic ic-mail"></i>Email it to them</a>
+          </div>
+          <p class="ui-hint">Status, priority and story changes appear on their page by themselves. Team comments stay private.</p>
+        </div>
+      </div>
+
+      <div class="px-section">
+        <h4><i class="ic ic-chat"></i> Team comments <span class="ui-badge">private</span></h4>
+        <anvil-component type="RepeatingPanel" name="comments_panel" prop:item_template="Prepsto.Items.Comment" prop:role='["px-comments"]'></anvil-component>
+        <anvil-component type="Label" name="no_comments" prop:text="No comments yet. Notes here show up in the story export as supporting comments." prop:role='["small-faint"]'></anvil-component>
+        <div class="px-addc">
+          <label class="ui-field px-grow"><span class="ui-sr">Add a comment</span><anvil-component type="TextArea" name="comment_box" prop:placeholder="Add a comment. Type @ to mention a teammate"></anvil-component></label>
+          <anvil-component type="Button" name="comment_button" prop:text="Post" prop:role='["btn", "btn-sm", "btn-primary"]'></anvil-component>
+        </div>
+      </div>
+
+      <div class="px-section" anvil:name="similar_part">
+        <h4><i class="ic ic-pulse"></i> Similar feedback</h4>
+        <anvil-component type="RepeatingPanel" name="similar_panel" prop:item_template="Prepsto.Items.SimilarItem" prop:role='["px-similar"]'></anvil-component>
+      </div>
+
+      <div class="ui-row px-drawer-foot">
+        <anvil-component type="Button" name="archive_button" prop:role='["btn", "btn-sm", "ic-archive"]'></anvil-component>
+        <span class="ui-spacer"></span>
+        <anvil-component type="Button" name="delete_button" prop:text="Delete" prop:role='["btn", "btn-sm", "btn-danger", "ic-trash"]'></anvil-component>
+      </div>
+    </div>
+  </div>
+</div>

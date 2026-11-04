@@ -59,7 +59,7 @@ ENTRIES = [
      "done", "", False, None),
 ]
 
-STORIES = {
+STORIES: dict = {
     "paste": {
         "title": "Pasting large tables never freezes the editor",
         "persona": "writer who works with spreadsheets",
@@ -86,6 +86,10 @@ STORIES = {
 }
 
 
+def _tracking(on, hours) -> dict:
+    return {"track": Tracking.new_token(), "reply_waiting": hours == 95} if on else {}
+
+
 def fill(board, owner, is_demo=False, tracking=True):
     """Add the sample entries, stories and comments to `board`. Returns the number of entries."""
     now = C.now()
@@ -106,8 +110,7 @@ def fill(board, owner, is_demo=False, tracking=True):
             page_url=SITE + page, context={"screen": "1440x900" if hours % 2 else "390x844",
                                             "browser": "Chrome 129" if hours % 3 else "Safari 18", "lang": "en"},
             status=status, priority=prio, tags=list(ai["tags"][:2]), starred=star,
-            story=stories.get(story), ai=ai, created=when, updated=when, is_demo=is_demo,
-            **({"track": Tracking.new_token(), "reply_waiting": hours == 95} if tracking else {}))
+            story=stories.get(story), ai=ai, created=when, updated=when, is_demo=is_demo, **_tracking(tracking, hours))
         if tracking:
             _timeline(e, owner, hours, when, now)
         if hours == 26:

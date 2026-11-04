@@ -1,0 +1,27 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head">
+        <div>
+          <div class="eyebrow">// user stories</div>
+          <anvil-component type="Label" name="title" prop:text="Stories" prop:role='["page-title"]'></anvil-component>
+          <p class="muted">Feedback turned into "As a…, I want…, so that…", with acceptance criteria, comments and the client's own words. Export to your tracker.</p>
+        </div>
+        <anvil-component type="Button" name="new_button" prop:text="New story" prop:role='["btn", "btn-primary", "ic-plus"]'></anvil-component>
+      </div>
+      <div class="st-filters">
+        <div class="ui-seg" role="group" aria-label="Status">
+          <anvil-component type="RepeatingPanel" name="status_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+        </div>
+        <anvil-component type="DropDown" name="board_box"></anvil-component>
+      </div>
+      <anvil-component type="RepeatingPanel" name="stories_panel" prop:item_template="Prepsto.Items.StoryCard" prop:role='["st-grid"]'></anvil-component>
+      <div class="ui-empty" anvil:name="empty">
+        <i class="ic ic-story"></i>
+        <anvil-component type="Label" name="empty_title" prop:role='["empty-title"]'></anvil-component>
+        <p>Select feedback in the Inbox and choose "Draft a story", or start a blank one.</p>
+        <a class="ui-btn primary" href="#inbox">Go to the inbox</a>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

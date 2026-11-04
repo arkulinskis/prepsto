@@ -1,0 +1,13 @@
+<anvil-form layout="Prepsto.Layouts.Bare">
+  <anvil-block slot="content">
+    <div class="f-wrap">
+      <anvil-component type="Prepsto.Components.FeedbackPanel" name="panel"></anvil-component>
+      <div class="f-missing" anvil:name="missing">
+        <img src="_/theme/icon.svg" alt="">
+        <h1>Feedback link not found</h1>
+        <anvil-component type="Label" name="missing_text" prop:role='["muted"]'></anvil-component>
+        <a class="ui-btn" href="#landing">What is Prepsto?</a>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

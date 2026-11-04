@@ -1,0 +1,40 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="jn">
+        <div class="ui-card" anvil:name="card">
+          <div class="marks"><anvil-component type="Label" name="avatar" prop:role='["px-av", "lg"]'></anvil-component><i></i><img src="_/theme/icon.svg" alt=""></div>
+          <div class="eyebrow">// team invitation</div>
+          <h1><anvil-component type="Label" name="inviter" prop:role='["px-inline"]'></anvil-component> invited you to <anvil-component type="Label" name="board" prop:role='["px-inline", "brand"]'></anvil-component></h1>
+          <ul>
+            <li><i class="ic ic-check"></i>Read and triage the feedback this link collects</li>
+            <li><i class="ic ic-check"></i>Assign feedback, comment and @mention teammates</li>
+            <li><i class="ic ic-check"></i>Write and export user stories together</li>
+          </ul>
+          <div anvil:name="owner_part"><p class="muted">You own this link, so you're already on its team.</p><div class="ui-row"><a class="ui-btn primary" href="#links">Go to your links</a></div></div>
+          <div anvil:name="already_part"><p class="muted">You're already on this team.</p><div class="ui-row"><a class="ui-btn primary" href="#inbox">Open the inbox</a></div></div>
+          <div anvil:name="member_part">
+            <anvil-component type="Label" name="signed_in_as" prop:role='["small-muted"]'></anvil-component>
+            <div class="ui-row">
+              <anvil-component type="Button" name="no_button" prop:text="Not now" prop:role='["btn", "btn-ghost"]'></anvil-component>
+              <anvil-component type="Button" name="yes_button" prop:text="Join the team" prop:role='["btn", "btn-primary", "btn-lg", "ic-check"]'></anvil-component>
+            </div>
+          </div>
+          <div anvil:name="guest_part">
+            <p class="muted">Create a free Prepsto account (or sign in) to join.</p>
+            <div class="ui-row">
+              <anvil-component type="Button" name="sign_in_button" prop:text="Sign in" prop:role='["btn"]'></anvil-component>
+              <anvil-component type="Button" name="sign_up_button" prop:text="Create an account" prop:role='["btn", "btn-primary", "ic-arrow"]'></anvil-component>
+            </div>
+          </div>
+        </div>
+        <div class="ui-empty" anvil:name="missing">
+          <i class="ic ic-link"></i>
+          <h1 class="h3">Invitation not found</h1>
+          <anvil-component type="Label" name="missing_text"></anvil-component>
+          <a class="ui-btn" href="#landing">Go to Prepsto</a>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

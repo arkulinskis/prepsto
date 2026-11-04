@@ -1,0 +1,95 @@
+<anvil-form layout="Prepsto.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="hm-hello">
+        <div>
+          <div class="eyebrow">// overview</div>
+          <anvil-component type="Label" name="hello" prop:role='["page-title"]'></anvil-component>
+          <anvil-component type="Label" name="waiting" prop:role='["muted", "hm-sub"]'></anvil-component>
+        </div>
+        <div class="ui-row">
+          <a class="ui-btn" href="#links"><i class="ic ic-code"></i>Get the code</a>
+          <a class="ui-btn primary" href="#inbox"><i class="ic ic-inbox"></i>Open inbox</a>
+        </div>
+      </div>
+
+      <div class="hm-stats">
+        <a class="ui-stat" href="#inbox"><anvil-component type="Label" name="s_new" prop:role='["stat-num"]'></anvil-component><span>New</span><anvil-component type="Label" name="s_open" prop:role='["hm-small"]'></anvil-component></a>
+        <div class="ui-stat"><anvil-component type="Label" name="s_week" prop:role='["stat-num"]'></anvil-component><span>This week</span><anvil-component type="Label" name="s_trend" prop:role='["hm-small"]'></anvil-component></div>
+        <div class="ui-stat"><anvil-component type="Label" name="s_rating" prop:role='["stat-num"]'></anvil-component><span>Avg rating</span><anvil-component type="Label" name="s_rated" prop:role='["hm-small"]'></anvil-component></div>
+        <a class="ui-stat" href="#stories"><anvil-component type="Label" name="s_stories" prop:role='["stat-num"]'></anvil-component><span>Stories</span><anvil-component type="Label" name="s_ready" prop:role='["hm-small"]'></anvil-component></a>
+      </div>
+
+      <anvil-component type="RepeatingPanel" name="invites_panel" prop:item_template="Prepsto.Items.InviteRow" prop:role='["hm-invites"]'></anvil-component>
+
+      <div class="hm-grid">
+        <div>
+          <section class="ui-card hm-card">
+            <h2 class="hm-h"><i class="ic ic-pulse"></i>Feedback per day <span class="mono small faint hm-h-note">last 14 days</span></h2>
+            <div class="px-bars" role="img" aria-label="Feedback per day, last 14 days">
+              <anvil-component type="RepeatingPanel" name="days_panel" prop:item_template="Prepsto.Items.DayBar" prop:role='["contents"]'></anvil-component>
+            </div>
+            <div class="px-axis"><anvil-component type="Label" name="axis_from" prop:role='["px-inline"]'></anvil-component><span>Today</span></div>
+          </section>
+
+          <section class="hm-card" anvil:name="assigned_part">
+            <h2 class="hm-h"><i class="ic ic-user"></i>Assigned to you <a class="hm-h-a" href="#inbox" anvil:on-dom:click="self.mine_click">See all <i class="ic ic-arrow"></i></a></h2>
+            <anvil-component type="RepeatingPanel" name="assigned_panel" prop:item_template="Prepsto.Items.EntryRow" prop:role='["px-list", "hm-attn"]'></anvil-component>
+          </section>
+
+          <section class="hm-card" anvil:name="attention_part">
+            <h2 class="hm-h"><i class="ic ic-flag"></i>Needs attention <a class="hm-h-a" href="#inbox">See all <i class="ic ic-arrow"></i></a></h2>
+            <anvil-component type="RepeatingPanel" name="attention_panel" prop:item_template="Prepsto.Items.EntryRow" prop:role='["px-list", "hm-attn"]'></anvil-component>
+          </section>
+
+          <section class="hm-card">
+            <h2 class="hm-h"><i class="ic ic-inbox"></i>Latest feedback <a class="hm-h-a" href="#inbox">Inbox <i class="ic ic-arrow"></i></a></h2>
+            <anvil-component type="RepeatingPanel" name="recent_panel" prop:item_template="Prepsto.Items.EntryRow" prop:role='["px-list"]'></anvil-component>
+            <div class="ui-empty" anvil:name="no_recent">
+              <i class="ic ic-inbox"></i>
+              <h3>No feedback yet</h3>
+              <p>Put your link on your site and it will show up here.</p>
+              <a class="ui-btn primary" href="#links">Get your link</a>
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section class="ui-card hm-card">
+            <h2 class="hm-h"><i class="ic ic-sparkle"></i>Sentiment</h2>
+            <div anvil:name="senti_part">
+              <div class="hm-senti" anvil:name="senti_bar" role="img">
+                <i class="positive" anvil:name="sb_pos"></i><i class="neutral" anvil:name="sb_neu"></i><i class="negative" anvil:name="sb_neg"></i>
+              </div>
+              <div class="hm-legend">
+                <anvil-component type="Label" name="lg_pos" prop:role='["px-senti", "positive"]'></anvil-component>
+                <anvil-component type="Label" name="lg_neu" prop:role='["px-senti", "neutral"]'></anvil-component>
+                <anvil-component type="Label" name="lg_neg" prop:role='["px-senti", "negative"]'></anvil-component>
+              </div>
+            </div>
+            <anvil-component type="Label" name="no_senti" prop:text="Appears once feedback arrives." prop:role='["small-muted"]'></anvil-component>
+            <anvil-component type="Label" name="provider" prop:role='["small-faint", "hm-provider"]'></anvil-component>
+          </section>
+
+          <section class="ui-card hm-card">
+            <h2 class="hm-h"><i class="ic ic-filter"></i>By kind</h2>
+            <anvil-component type="RepeatingPanel" name="kinds_panel" prop:item_template="Prepsto.Items.KindBar"></anvil-component>
+            <anvil-component type="Label" name="no_kinds" prop:text="Nothing yet." prop:role='["small-muted"]'></anvil-component>
+          </section>
+
+          <section class="ui-card hm-card">
+            <h2 class="hm-h"><i class="ic ic-grid"></i>Themes</h2>
+            <anvil-component type="RepeatingPanel" name="tags_panel" prop:item_template="Prepsto.Items.ThemeTag" prop:role='["hm-tags"]'></anvil-component>
+            <anvil-component type="Label" name="no_tags" prop:text="Themes show up as feedback comes in." prop:role='["small-muted"]'></anvil-component>
+          </section>
+
+          <section class="ui-card hm-card">
+            <h2 class="hm-h"><i class="ic ic-link"></i>Your links <a class="hm-h-a" href="#links">Manage <i class="ic ic-arrow"></i></a></h2>
+            <anvil-component type="RepeatingPanel" name="links_panel" prop:item_template="Prepsto.Items.HomeLink" prop:role='["hm-links"]'></anvil-component>
+            <a class="ui-btn primary block" href="#links" anvil:name="first_link"><i class="ic ic-plus"></i>Create your first link</a>
+          </section>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

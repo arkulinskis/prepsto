@@ -1,5 +1,115 @@
 allow_embedding: true
 db_schema:
+  api_keys:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: name
+      type: string
+    - admin_ui:
+        order: 2
+        width: 200
+      name: prefix
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: hash
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: scopes
+      type: simpleObject
+    - admin_ui:
+        order: 5
+        width: 200
+      name: boards
+      type: simpleObject
+    - admin_ui:
+        order: 6
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 7
+        width: 200
+      name: expires
+      type: datetime
+    - admin_ui:
+        order: 8
+        width: 200
+      name: revoked
+      type: datetime
+    - admin_ui:
+        order: 9
+        width: 200
+      name: last_used
+      type: datetime
+    - admin_ui:
+        order: 10
+        width: 200
+      name: uses
+      type: number
+    - admin_ui:
+        order: 11
+        width: 200
+      name: window_start
+      type: datetime
+    - admin_ui:
+        order: 12
+        width: 200
+      name: window_count
+      type: number
+    indexes: []
+    server: full
+    title: API keys
+  api_log:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: key
+      target: api_keys
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 2
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 3
+        width: 200
+      name: method
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: action
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: status
+      type: number
+    indexes: []
+    server: full
+    title: API log
   app_settings:
     client: none
     columns:
@@ -673,52 +783,57 @@ metadata:
   title: 'Prepsto: customer feedback panel to user stories'
 name: Prepsto
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=6e4a8dbdd1\"></script>\n<!-- seo:start (APP_MAKER/seo: edit seo/apps/prepsto.json\
-    \ and run seo.py, not here) -->\n<link rel=\"canonical\" href=\"https://prepsto.com/\">\n<meta name=\"robots\" content=\"\
-    index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1\">\n<meta name=\"keywords\" content=\"customer\
-    \ feedback widget, feedback button for website, user feedback tool, feature request tracking, user stories from feedback,\
-    \ feedback triage, closed-loop feedback, product feedback board, embed feedback form\">\n<meta name=\"author\" content=\"\
-    Arkvital\">\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"Prepsto\">\n<meta\
-    \ property=\"og:title\" content=\"Prepsto: customer feedback panel to user stories\">\n<meta property=\"og:description\"\
-    \ content=\"A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user\
-    \ stories, and let people track what happens to their idea.\">\n<meta property=\"og:locale\" content=\"en_CA\">\n<meta\
-    \ property=\"og:url\" content=\"https://prepsto.com/\">\n<meta property=\"og:image\" content=\"https://prepsto.com/_/theme/og-image.png\"\
-    >\n<meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\">\n<meta property=\"\
-    og:image:alt\" content=\"Prepsto: Collect customer feedback and turn it into user stories\">\n<meta name=\"twitter:card\"\
-    \ content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"Prepsto: customer feedback panel to user stories\"\
-    >\n<meta name=\"twitter:description\" content=\"A feedback panel you drop on any site with one link. Collect, triage and\
-    \ turn customer feedback into user stories, and let people track what happens to their idea.\">\n<meta name=\"twitter:image\"\
-    \ content=\"https://prepsto.com/_/theme/og-image.png\">\n<link rel=\"alternate\" type=\"text/plain\" title=\"Prepsto for\
-    \ AI assistants\" href=\"https://prepsto.com/llms.txt\">\n<script type=\"application/ld+json\">{\"@context\": \"https://schema.org\"\
-    , \"@graph\": [{\"@type\": \"WebApplication\", \"@id\": \"https://prepsto.com/#app\", \"name\": \"Prepsto\", \"url\":\
-    \ \"https://prepsto.com/\", \"description\": \"A feedback panel you drop on any site with one link. Collect, triage and\
-    \ turn customer feedback into user stories, and let people track what happens to their idea.\", \"image\": \"https://prepsto.com/_/theme/og-image.png\"\
-    , \"inLanguage\": \"en\", \"publisher\": {\"@id\": \"https://arkvital.com/#org\"}, \"keywords\": \"customer feedback widget,\
-    \ feedback button for website, user feedback tool, feature request tracking, user stories from feedback, feedback triage,\
-    \ closed-loop feedback, product feedback board, embed feedback form\", \"applicationCategory\": \"BusinessApplication\"\
-    , \"operatingSystem\": \"Any (web browser)\", \"browserRequirements\": \"Requires JavaScript and a modern web browser\"\
-    , \"featureList\": [\"A feedback panel from one link or one script tag; no cookies\", \"Bug, idea, praise and question\
-    \ chips, optional stars and email\", \"A private tracking link for every message: received, planned, done\", \"Triage\
-    \ into user stories with the customers' own words\", \"Export to Markdown, Gherkin, Jira or CSV\"], \"audience\": {\"\
-    @type\": \"Audience\", \"audienceType\": \"Makers of websites and apps who want to hear from their users\"}}, {\"@type\"\
-    : \"WebSite\", \"@id\": \"https://prepsto.com/#site\", \"url\": \"https://prepsto.com/\", \"name\": \"Prepsto\", \"publisher\"\
-    : {\"@id\": \"https://arkvital.com/#org\"}}, {\"@type\": \"Organization\", \"@id\": \"https://arkvital.com/#org\", \"\
-    name\": \"Arkvital\", \"url\": \"https://arkvital.com\", \"email\": \"arkvital@outlook.com\", \"address\": {\"@type\"\
-    : \"PostalAddress\", \"addressLocality\": \"Montreal\", \"addressRegion\": \"QC\", \"addressCountry\": \"CA\"}}]}</script>\n\
-    <!-- seo:end -->\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<meta\
-    \ name=\"theme-color\" content=\"#ffffff\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<link rel=\"\
-    preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n\
-    <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap\"\
-    \ rel=\"stylesheet\">\n<link id=\"ui-favicon\" rel=\"icon\" type=\"image/svg+xml\" href=\"_/theme/icon.svg?v=8a9ad5f946\"\
-    >\n<link rel=\"apple-touch-icon\" href=\"_/theme/icon-180.png?v=8a9ad5f946\">\n<script>\n/* Keep our tab icon: Anvil adds\
-    \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
-    \    if (!ours) return;\n    document.querySelectorAll('link[rel~=\"icon\"]').forEach(function (l) { if (l !== ours) l.remove();\
-    \ });\n  }\n  keep();\n  document.addEventListener('DOMContentLoaded', keep);\n  window.addEventListener('load', keep);\n\
-    })();\n</script>\n\n<!-- Prepsto feedback panel: every \"Submit feedback\" link and button opens it (it is the only feedback\
-    \ channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->\n\
-    <script src=\"https://prepsto.com/_/theme/widget.js\" data-prepsto=\"938ktjj\" data-button=\"false\" data-label=\"Submit\
-    \ feedback\" async></script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=3b8df5fddd\">\n<script src=\"_/theme/app.js?v=d997796b3e\"\
-    ></script>\n"
+  head_html: |
+    <script src="_/theme/legal-kit.js?v=1415546e48"></script>
+    <!-- seo:start (APP_MAKER/seo: edit seo/apps/prepsto.json and run seo.py, not here) -->
+    <link rel="canonical" href="https://prepsto.com/">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="keywords" content="customer feedback widget, feedback button for website, user feedback tool, feature request tracking, user stories from feedback, feedback triage, closed-loop feedback, product feedback board, embed feedback form">
+    <meta name="author" content="Arkvital">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Prepsto">
+    <meta property="og:title" content="Prepsto: customer feedback panel to user stories">
+    <meta property="og:description" content="A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.">
+    <meta property="og:locale" content="en_CA">
+    <meta property="og:url" content="https://prepsto.com/">
+    <meta property="og:image" content="https://prepsto.com/_/theme/og-image.png">
+    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Prepsto: Collect customer feedback and turn it into user stories">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Prepsto: customer feedback panel to user stories">
+    <meta name="twitter:description" content="A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.">
+    <meta name="twitter:image" content="https://prepsto.com/_/theme/og-image.png">
+    <link rel="alternate" type="text/plain" title="Prepsto for AI assistants" href="https://prepsto.com/llms.txt">
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "@id": "https://prepsto.com/#app", "name": "Prepsto", "url": "https://prepsto.com/", "description": "A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.", "image": "https://prepsto.com/_/theme/og-image.png", "inLanguage": "en", "publisher": {"@id": "https://arkvital.com/#org"}, "keywords": "customer feedback widget, feedback button for website, user feedback tool, feature request tracking, user stories from feedback, feedback triage, closed-loop feedback, product feedback board, embed feedback form", "applicationCategory": "BusinessApplication", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern web browser", "featureList": ["A feedback panel from one link or one script tag; no cookies", "Bug, idea, praise and question chips, optional stars and email", "A private tracking link for every message: received, planned, done", "Triage into user stories with the customers' own words", "Export to Markdown, Gherkin, Jira or CSV"], "audience": {"@type": "Audience", "audienceType": "Makers of websites and apps who want to hear from their users"}}, {"@type": "WebSite", "@id": "https://prepsto.com/#site", "url": "https://prepsto.com/", "name": "Prepsto", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
+    <!-- seo:end -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link id="ui-favicon" rel="icon" type="image/svg+xml" href="_/theme/icon.svg?v=e5c19c743b">
+    <link rel="apple-touch-icon" href="_/theme/icon-180.png?v=f73da0e55c">
+    <script>
+    /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
+    (function () {
+      function keep() {
+        var ours = document.getElementById('ui-favicon');
+        if (!ours) return;
+        document.querySelectorAll('link[rel~="icon"]').forEach(function (l) { if (l !== ours) l.remove(); });
+      }
+      keep();
+      document.addEventListener('DOMContentLoaded', keep);
+      window.addEventListener('load', keep);
+    })();
+    </script>
+
+    <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
+    <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="938ktjj" data-button="false" data-label="Submit feedback" async></script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=f902613793">
+    <link rel="stylesheet" href="_/theme/app.css?v=a76603dcfa">
+    <script src="_/theme/app-kit.js?v=9a0e56786f"></script>
+    <script src="_/theme/px.js?v=46204cc340"></script>
 package_name: Prepsto
 runtime_options:
   client_version: '3'
@@ -746,5 +861,5 @@ services:
   server_config: {}
   source: /runtime/services/google.yml
 startup:
-  module: Main
-  type: form
+  module: startup
+  type: module

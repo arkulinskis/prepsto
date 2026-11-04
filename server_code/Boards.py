@@ -237,11 +237,12 @@ def widget_submit(slug, data):
         return C.fail("That email address doesn't look right (or leave it empty).")
     if C.rate_limited("widget", SUBMITS_PER_HOUR, 3600):
         return C.fail("Thanks! You've sent a lot this hour. Please try again a bit later.")
-    ctx = data.get("context") if isinstance(data.get("context"), dict) else {}
+    raw_ctx = data.get("context")
+    ctx = raw_ctx if isinstance(raw_ctx, dict) else {}
     context = {k: C.text(ctx.get(k), 200) for k in ("screen", "browser", "lang", "referrer") if ctx.get(k)}
     ai = Insights.analyze(message, kind, rating)
     prio = "high" if ai["urgency"] == "high" else ""
-    row = dict(board=b, kind=kind, message=message, rating=rating, email=email or None,
+    row: dict = dict(board=b, kind=kind, message=message, rating=rating, email=email or None,
                name=C.text(data.get("name"), 60) or None, page_url=C.text(data.get("page"), 300) or None,
                context=context, status="new", priority=prio, tags=[], starred=False, story=None, ai=ai,
                created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]))
