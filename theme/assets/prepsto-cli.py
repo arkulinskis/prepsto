@@ -11,6 +11,7 @@ One file, Python 3.8+, nothing to install. Download it from Prepsto (Claude & AP
     python prepsto.py comment <id> "text"   a private note for your team ("-" reads the text from stdin)
     python prepsto.py reply <id> "text"     a public reply the sender reads (needs a key that may reply)
     python prepsto.py done <id> [--comment "what changed"] [--reply "text for the sender"]
+    python prepsto.py new --link <code> "text"   file a ticket yourself (an idea, a bug you found)  (--kind --tag --page --name)
     python prepsto.py stories               user stories        python prepsto.py story <id> [--format markdown]
     python prepsto.py draft-story <id> <id> ...   draft a user story from tickets
     python prepsto.py links | whoami | logout
@@ -30,7 +31,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_URL = "https://prepsto.com"
 CONFIG = os.path.join(os.path.expanduser("~"), ".prepsto", "config.json")
 STATUSES = ["new", "reviewing", "planned", "done", "archived"]
@@ -187,7 +188,8 @@ def cmd_whoami(args):
 def cmd_links(args):
     def human(d):
         for b in d["links"]:
-            print("%-16s %-30s %3d new / %d total%s" % (b["id"], short(b["name"], 30), b["new"], b["total"], "" if b["open"] else "  (closed)"))
+            print("%-16s %-8s %-30s %3d new / %d total%s" % (b["id"], b.get("code", ""), short(b["name"], 30), b["new"], b["total"],
+                                                         "" if b["open"] else "  (closed)"))
     out(args, api("GET", "/v1/links"), human)
 
 
@@ -266,6 +268,18 @@ def cmd_done(args):
     _changed(args, d, "done" + (" (comment added)" if args.comment else "") + (" (sender told)" if args.reply else ""))
 
 
+def cmd_new(args):
+    body = {"link": args.link, "message": _text(args.text)}
+    for field, value in (("kind", args.kind), ("page_url", args.page), ("name", args.name), ("priority", args.priority)):
+        if value:
+            body[field] = value
+    if args.tag:
+        body["tags"] = args.tag
+    d = api("POST", "/v1/tickets", body)
+    out(args, d, lambda x: print("Ticket filed: %s (%s on %s)\n%s" % (x["ticket"]["id"], x["ticket"]["kind"],
+                                                                     x["ticket"]["link"]["name"], x["ticket"]["url"])))
+
+
 def cmd_stories(args):
     def human(d):
         if not d["stories"]:
@@ -321,6 +335,14 @@ TOOLS = [
               "add_tag": {"type": "string"}, "remove_tag": {"type": "string"}, "starred": {"type": "boolean"},
               "assignee": {"type": ["string", "null"]}, "story_id": {"type": "string"}}, ["ticket_id"]), False,
      lambda a: api("POST", "/v1/tickets/" + tid(a["ticket_id"]), {k: v for k, v in a.items() if k != "ticket_id"})),
+    ("create_ticket", "File a NEW ticket yourself on one of the key's feedback links: an improvement idea, a bug you found while "
+     "testing, a question. It lands in the inbox as New. link = the link's id or code (list_links shows both).",
+     _schema({"link": {"type": "string"}, "message": {"type": "string", "minLength": 3},
+              "kind": {"type": "string", "enum": ["bug", "idea", "praise", "question", "other"]},
+              "page_url": {"type": "string"}, "name": {"type": "string", "description": "Shown as the sender (default: the key's owner)"},
+              "tags": {"type": "array", "items": {"type": "string"}}, "priority": {"type": "string", "enum": PRIORITIES}},
+             ["link", "message"]), False,
+     lambda a: api("POST", "/v1/tickets", a)),
     ("add_team_comment", "Add a PRIVATE note to a ticket for the team (the sender never sees it), e.g. what you changed and where.",
      _schema({"ticket_id": ID, "body": {"type": "string"}}, ["ticket_id", "body"]), False,
      lambda a: api("POST", "/v1/tickets/%s/comments" % tid(a["ticket_id"]), {"body": a["body"]})),
@@ -445,6 +467,14 @@ def parser():
     s.add_argument("id")
     s.add_argument("--comment", help="a private note about what changed")
     s.add_argument("--reply", help="a public reply to the sender")
+    s = sub.add_parser("new", help="file a ticket yourself (an idea, a bug you found)")
+    s.add_argument("--link", required=True, help="the link's code or id (see: links)")
+    s.add_argument("text", help='the message, or "-" to read it from stdin')
+    s.add_argument("--kind", choices=["bug", "idea", "praise", "question", "other"], help="default: idea")
+    s.add_argument("--tag", action="append", help="a tag (repeat for more)")
+    s.add_argument("--page", help="the page it is about")
+    s.add_argument("--name", help="shown as the sender (default: your name)")
+    s.add_argument("--priority", choices=["low", "medium", "high", "urgent"])
     s = sub.add_parser("stories", help="list user stories")
     s.add_argument("--link")
     s.add_argument("--status", choices=["draft", "ready", "in_progress", "shipped"])
@@ -459,7 +489,7 @@ def parser():
 
 
 COMMANDS = {"login": cmd_login, "logout": cmd_logout, "whoami": cmd_whoami, "links": cmd_links, "tickets": cmd_tickets,
-            "show": cmd_show, "set": cmd_set, "claim": cmd_claim, "comment": cmd_comment, "reply": cmd_reply, "done": cmd_done,
+            "show": cmd_show, "set": cmd_set, "claim": cmd_claim, "comment": cmd_comment, "reply": cmd_reply, "done": cmd_done, "new": cmd_new,
             "stories": cmd_stories, "story": cmd_story, "draft-story": cmd_draft, "mcp": cmd_mcp}
 
 

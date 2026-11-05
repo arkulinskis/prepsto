@@ -684,6 +684,30 @@ assert "Scenario: a long export" in r["text"]
 assert api("POST", "/v1/stories/%s/comments" % sid_, KEY, {"body": "Ready for the next sprint"})[0] == 200
 assert api("POST", "/v1/stories", READ_KEY, {"ticket_ids": [t1["id"]]})[0] == 403
 
+# filing a ticket yourself (Claude noting an idea), by the link's code or its id
+s, r = api("GET", "/v1/links", KEY)
+assert any(b["code"] == kb2["slug"] for b in r["links"]), "links carry their code"
+n_before = len(T.entries.search(board=T.boards.get(slug=kb2["slug"])))
+s, r = api("POST", "/v1/tickets", KEY, {"link": kb2["slug"], "message": "Idea: a weekly digest email", "page_url": "https://kay.example/",
+                                       "tags": ["Digest"], "name": "App Board"})
+assert s == 200 and r["ticket"]["kind"] == "idea" and r["ticket"]["status"] == "new" and r["ticket"]["from"] == "App Board"
+assert r["ticket"]["tags"] == ["digest"] and not r["ticket"]["has_email"] and r["ticket"]["link"]["name"] == "Kay's other app"
+new_t = T.entries.search(board=T.boards.get(slug=kb2["slug"]))
+assert len(new_t) == n_before + 1 and [u["kind"] for u in T.updates.search(entry=new_t[-1])] == ["received"]
+s, r = api("POST", "/v1/tickets", KEY, {"link": kb["id"], "message": "Crash when the export is empty", "kind": "bug", "priority": "urgent"})
+assert s == 200 and r["ticket"]["kind"] == "bug" and r["ticket"]["priority"] == "urgent" and r["ticket"]["from"] == "Kay Owner"
+s, r = api("POST", "/v1/tickets", KEY, {"link": AR.sid(kb["id"]), "message": "Another one"})
+assert s == 200 and r["ticket"]["kind"] == "idea", "default kind is idea when the link has it"
+assert api("POST", "/v1/tickets", KEY, {"link": kb2["slug"], "message": "x", })[0] == 400, "too short"
+assert api("POST", "/v1/tickets", KEY, {"link": kb2["slug"], "message": "A bug", "kind": "bug"})[0] == 400, "kb2 only takes ideas"
+assert api("POST", "/v1/tickets", KEY, {"link": kb2["slug"], "message": "Fine", "priority": "huge"})[0] == 400
+assert api("POST", "/v1/tickets", KEY, {"link": kb2["slug"], "message": "Fine", "email": "a@b.c"})[0] == 400, "no email field"
+assert api("POST", "/v1/tickets", KEY, {"message": "No link"})[0] == 400
+assert api("POST", "/v1/tickets", KEY, {"link": nb["slug"], "message": "Someone else's link"})[0] == 404
+assert api("POST", "/v1/tickets", KEY, {"link": AR.sid(nb["id"]), "message": "Someone else's link"})[0] == 404
+assert api("POST", "/v1/tickets", READ_KEY, {"link": kb["slug"], "message": "Read-only key"})[0] == 403
+assert api("POST", "/v1/tickets", None, {"link": kb["slug"], "message": "No key"})[0] == 401
+
 # a teammate's key follows their membership
 as_user(lou)
 LOU_KEY = ok(call("create_api_key", "Lou's Claude", ["write"], [], 30))["key"]
@@ -723,7 +747,7 @@ bad(call("create_api_key", "One too many"), "at most MAX_KEYS active keys")
 as_user(kay)
 lk = call("list_api_keys")
 assert lk["log"] and all(set(x) == {"created", "key", "action", "status"} for x in lk["log"])
-assert any(x["status"] == 403 for x in lk["log"]) and any(x["action"].startswith("POST /v1/tickets/") for x in lk["log"])
+assert any(x["status"] == 403 for x in lk["log"]) and any(x["action"].startswith("POST /v1/tickets") for x in lk["log"])
 assert krow["uses"] > 10 and krow["last_used"] is not None
 
 # ---------------------------------------------------------------------------------- Privacy & Terms

@@ -60,9 +60,10 @@ Keep this list current: it is the first thing read before every change.
 - **Recent activity**: the last requests made with your keys (when, which key, what, the answer).
 - **Connect Claude**: download `prepsto.py` (one Python file: a command line and an MCP server) and the Claude Code skill;
   `python prepsto.py login`, then `claude mcp add prepsto -- python /path/to/prepsto.py mcp`. Command line:
-  `tickets`, `show`, `claim`, `set`, `comment`, `reply`, `done`, `stories`, `story`, `draft-story`, `links`, `whoami`.
-- **HTTP API** at `https://prepsto.com/_/api/v1/` (`Authorization: Bearer psk_...`): `/me`, `/links`, `/tickets`,
-  `/tickets/<id>` (+ `/comments`, `/replies`), `/stories`, `/stories/<id>?format=markdown` (+ `/comments`). A key acts with
+  `tickets`, `show`, `claim`, `set`, `comment`, `reply`, `done`, `new` (file a ticket yourself), `stories`, `story`,
+  `draft-story`, `links`, `whoami`.
+- **HTTP API** at `https://prepsto.com/_/api/v1/` (`Authorization: Bearer psk_...`): `/me`, `/links`, `/tickets`
+  (POST files a new ticket on one of your links: an idea or a bug you found), `/tickets/<id>` (+ `/comments`, `/replies`), `/stories`, `/stories/<id>?format=markdown` (+ `/comments`). A key acts with
   its owner's permissions at that moment, can't delete anything, and never sees senders' email addresses or tracking links.
 
 **For everyone:** a landing page (with "Try the panel" on the demo link `#f/demo`), sign-up with email and password or Google, feedback through Prepsto ("Submit feedback" in the footer and menu opens its panel),

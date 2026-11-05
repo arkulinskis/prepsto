@@ -7,6 +7,9 @@ Served at https://prepsto.com/_/api/v1/... ; every request needs a key from the 
     GET  /v1/links                     the links the key can see
     GET  /v1/tickets                   ?status=open|new|reviewing|planned|done|archived|all &link= &kind= &tag= &q=
                                        &mine=1 &sort=newest|oldest|priority|rating &limit=25 (max 100) &offset=0
+    POST /v1/tickets                   (write) file a new ticket yourself (an idea, a bug you found): {"link": <link id or
+                                       its code>, "message", "kind", "page_url", "name" (shown as the sender; default:
+                                       your name), "tags", "priority"}
     GET  /v1/tickets/<id>              one ticket: message, details, insights, team comments, the sender's timeline
     POST /v1/tickets/<id>              (write) change it: {"status", "priority", "tags", "add_tag", "remove_tag",
                                        "starred", "assignee": "me" | <user id> | null, "story_id"}
@@ -27,6 +30,7 @@ import re
 import urllib.parse
 
 import anvil.server
+from anvil.tables import app_tables
 
 from . import common as C
 from . import ApiKeys, Boards, Inbox, Insights, Stories, Tracking
@@ -217,15 +221,18 @@ def api_links(**query):
         out = []
         for b in ApiKeys.allowed_boards(k, u):
             d = Boards.board_dict(b, me=u)
-            out.append({"id": sid(d["id"]), "name": d["name"], "role": d["role"], "site_url": d["site_url"], "open": d["is_open"],
+            out.append({"id": sid(d["id"]), "code": d["slug"], "name": d["name"], "role": d["role"], "site_url": d["site_url"], "open": d["is_open"],
                         "total": d["total"], "new": d["new"], "last": d["last"], "kinds": d["kinds"],
                         "tracking": d["public_track"], "team": d["team"]})
         return {"links": out}
     return _serve("/v1/links", run, query)
 
 
-@anvil.server.http_endpoint("/v1/tickets", methods=["GET"])
+@anvil.server.http_endpoint("/v1/tickets", methods=["GET", "POST"])
 def api_tickets(**query):
+    if _method() == "POST":
+        return _serve("/v1/tickets", lambda k, u, q: _ticket_create(k, u, _body()), query, scope="write")
+
     def run(k, u, q):
         status = q.get("status") or "open"
         if status not in STATUSES:
@@ -244,6 +251,57 @@ def api_tickets(**query):
         return {"tickets": [ticket(e) for e in rows[offset:offset + limit]], "total": len(rows), "offset": offset, "limit": limit,
                 "counts": counts}
     return _serve("/v1/tickets", run, query)
+
+
+CREATE_FIELDS = ("link", "link_id", "message", "kind", "page_url", "name", "tags", "priority")
+
+
+def _link_for(k, u, value):
+    """A link this key can see, by its id ("169207-4096") or its code (the 7 letters in prepsto.com/#f/<code>)."""
+    value = str(value or "").strip()
+    if not value:
+        raise Problem(400, "Send \"link\": the id or code of the feedback link the ticket belongs to (GET /v1/links lists them).")
+    boards = ApiKeys.allowed_boards(k, u)
+    b = next((b for b in boards if b.get_id() == rid(value)), None) or \
+        next((b for b in boards if (b["slug"] or "") == value.lower()), None)
+    if b is None:
+        raise Problem(404, "This key can't see a link with that id or code.")
+    return b
+
+
+def _ticket_create(k, u, body):
+    """A member files a ticket on one of their own links (Claude noting an idea, a bug found while testing...).
+    Same row as a panel submission, without an email address; the team sees it in the inbox like any other."""
+    unknown = [x for x in body if x not in CREATE_FIELDS]
+    if unknown:
+        raise Problem(400, "Unknown field(s): %s. You can send: %s." % (", ".join(unknown), ", ".join(CREATE_FIELDS)))
+    b = _link_for(k, u, body.get("link") or body.get("link_id"))
+    message = C.text(body.get("message"), 4000, multiline=True)
+    if len(message) < 3:
+        raise Problem(400, "Send a \"message\" of at least a few words.")
+    kinds = list(b["kinds"] or Boards.DEFAULT_KINDS)
+    kind = body.get("kind") or ("idea" if "idea" in kinds else kinds[0])
+    if kind not in kinds:
+        raise Problem(400, "kind must be one of this link's kinds: " + ", ".join(kinds))
+    priority = body.get("priority") or ""
+    if priority not in Inbox.PRIORITIES:
+        raise Problem(400, "priority must be one of: " + ", ".join(x for x in Inbox.PRIORITIES if x))
+    tags = body.get("tags") or []
+    if not isinstance(tags, list):
+        raise Problem(400, "tags must be a list of words.")
+    ai = Insights.analyze(message, kind, None)
+    row: dict = dict(board=b, kind=kind, message=message, rating=None, email=None,
+               name=C.text(body.get("name"), 60) or C.name_of(u), page_url=C.text(body.get("page_url"), 300) or None,
+               context={"via": "api", "key": C.text(k["name"], 60)}, status="new",
+               priority=priority or ("high" if ai["urgency"] == "high" else ""), tags=Inbox.clean_tags(tags), starred=False,
+               story=None, ai=ai, created=C.now(), updated=C.now(), is_demo=bool(b["is_demo"]))
+    try:
+        e = app_tables.entries.add_row(track=Tracking.new_token(), reply_waiting=False, **row)
+        Tracking.log(e, "received")
+    except Exception as ex:  # tracking columns not accepted in Anvil yet: still save it (as widget_submit does)
+        print("tracking unavailable:", ex)
+        e = app_tables.entries.add_row(**row)
+    return {"ticket": ticket(Inbox.entry_dict(e))}
 
 
 @anvil.server.http_endpoint("/v1/tickets/:ticket_id", methods=["GET", "POST", "PATCH"])

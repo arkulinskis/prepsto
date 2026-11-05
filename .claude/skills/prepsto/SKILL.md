@@ -95,12 +95,13 @@ changing text, Buttons with roles, JS only for engines). Prepsto specifics:
 - Keys: `psk_` + 40 random chars; only SHA-256 + first 12 chars stored. Scopes read / write / reply (reply implies
   write), optional link list, expiry 30/90/365 days or never, max 10 active keys, 600 requests / 10 min per key, last 200
   requests logged per key (api_log). A key acts as its owner through Boards.role_in at request time.
-- Endpoints (ApiRoutes.py docstring has the full list): `/v1/me`, `/v1/links`, `/v1/tickets` (+ `/<id>`, `/comments`,
+- Endpoints (ApiRoutes.py docstring has the full list): `/v1/me`, `/v1/links` (with each link's code), `/v1/tickets`
+  (POST = file a ticket yourself, by link id or code; no email field) (+ `/<id>`, `/comments`,
   `/replies`), `/v1/stories` (+ `/<id>?format=markdown`, `/comments`). Ids are `169207-4096` (Anvil's `[169207,4096]`
   without brackets: `sid`/`rid`). Never returns senders' emails or tracking tokens; no deletes; keys in the address are refused.
 - `prepsto-cli.py` (served as `_/theme/prepsto-cli.py`, downloaded as prepsto.py): stdlib only, config in
   `~/.prepsto/config.json` (600), `prepsto.py mcp` = MCP stdio server (tools list_tickets, get_ticket, update_ticket,
-  add_team_comment, reply_to_sender, list_stories, get_story, draft_story, update_story, list_links, whoami).
+  create_ticket, add_team_comment, reply_to_sender, list_stories, get_story, draft_story, update_story, list_links, whoami).
   `prepsto-skill.md` = a Claude Code skill for the ticket workflow (reply to senders only with the user's OK).
 - New API field: add it to `ticket()` in ApiRoutes (check it leaks nothing), the CLI's printing, the MCP schema, tests.
 

@@ -57,6 +57,12 @@ check(d["ticket"]["status"] == "done" and "cli" in d["ticket"]["tags"] and d["ti
 check(any(u["kind"] == "reply" for u in d["sender"]["timeline"]), "the sender sees the reply")
 r = run("show", "999999-1", ok=False)
 check(r.returncode == 1 and "no ticket" in r.stderr.lower(), "a wrong id is a clear error")
+link = json.loads(run("--json", "links").stdout)["links"][0]
+r = run("--json", "new", "--link", link["code"], "Idea from the CLI test: a dark mode", "--tag", "cli", "--name", "CLI test")
+made = json.loads(r.stdout)["ticket"]
+check(made["status"] == "new" and made["from"] == "CLI test" and made["tags"] == ["cli"] and made["link"]["id"] == link["id"], "new files a ticket by code")
+r = run("new", "--link", "nope", "Lost ticket", ok=False)
+check(r.returncode == 1 and "can't see" in r.stderr, "new with a wrong link is a clear error")
 stories = json.loads(run("--json", "stories").stdout)["stories"]
 check(stories and run("story", stories[0]["id"]).stdout.startswith("# "), "story as Markdown")
 
@@ -69,7 +75,8 @@ msgs = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocol
         {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "get_ticket", "arguments": {"ticket_id": tid}}},
         {"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "update_ticket", "arguments": {"ticket_id": tid, "status": "planned"}}},
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "get_ticket", "arguments": {"ticket_id": "nope"}}},
-        {"jsonrpc": "2.0", "id": 7, "method": "nonsense"}]
+        {"jsonrpc": "2.0", "id": 7, "method": "nonsense"},
+        {"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {"name": "create_ticket", "arguments": {"link": link["id"], "message": "Idea from MCP", "kind": "idea"}}}]
 r = run("mcp", stdin="\n".join(json.dumps(m) for m in msgs) + "\n")
 answers = {a["id"]: a for a in (json.loads(line) for line in r.stdout.splitlines() if line.strip())}
 check(answers[1]["result"]["serverInfo"]["name"] == "prepsto" and "tools" in answers[1]["result"]["capabilities"], "mcp: initialize")
@@ -81,6 +88,7 @@ check(answers[4]["result"]["structuredContent"]["ticket"]["id"] == tid, "mcp: ge
 check(answers[5]["result"]["structuredContent"]["ticket"]["status"] == "planned", "mcp: update_ticket")
 check(answers[6]["result"].get("isError") is True, "mcp: a failing tool call is an error result, not a crash")
 check(answers[7]["error"]["code"] == -32601, "mcp: unknown methods are refused")
-check(2 not in [a for a in answers if "error" in answers[a]] and len(answers) == 7, "mcp: notifications get no answer")
+check(answers[8]["result"]["structuredContent"]["ticket"]["message"] == "Idea from MCP", "mcp: create_ticket")
+check(2 not in [a for a in answers if "error" in answers[a]] and len(answers) == 8, "mcp: notifications get no answer")
 check("Signed in" not in run("logout").stdout and "key" not in json.loads(cfg.read_text()), "logout removes the key")
 print("CLI TESTS PASSED")

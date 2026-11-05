@@ -68,7 +68,8 @@ class Claude(ClaudeTemplate):
                 "python prepsto.py show <id>",
                 "python prepsto.py claim <id>              # assign it to you",
                 'python prepsto.py comment <id> "Fixed in a1b2c3d"',
-                'python prepsto.py done <id> --reply "Thanks! It\'s fixed in today\'s release."'])
+                'python prepsto.py done <id> --reply "Thanks! It\'s fixed in today\'s release."',
+                'python prepsto.py new --link <code> "Idea: export to PDF"   # file one yourself'])
             self.after.text = "Add --json to any command for the raw answer. python prepsto.py help lists everything."
         else:
             self.intro.text = "Any language: send the key in the Authorization header. JSON in, JSON out."
@@ -78,7 +79,7 @@ class Claude(ClaudeTemplate):
                 'curl -X POST -H "Authorization: Bearer $PREPSTO_KEY" \\',
                 '  -H "Content-Type: application/json" -d \'{"status": "done"}\' \\',
                 '  "%s/v1/tickets/<id>"' % self.api])
-            self.after.text = ("Endpoints: /v1/me, /v1/links, /v1/tickets, /v1/tickets/<id> (and /comments, /replies), "
+            self.after.text = ("Endpoints: /v1/me, /v1/links, /v1/tickets (POST files a new one), /v1/tickets/<id> (and /comments, /replies), "
                                "/v1/stories, /v1/stories/<id>?format=markdown. Never put the key in the address.")
 
     def _pick_tab(self, key=None, **event_args):
