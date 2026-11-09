@@ -51,5 +51,5 @@ class BoardCard(BoardCardTemplate):
         self.parent.raise_event("x-open", entry_id=self.item["id"])
 
     def _key(self, event):
-        if event.key == "Enter":
+        if getattr(event, "key", None) == "Enter":
             self.parent.raise_event("x-open", entry_id=self.item["id"])

@@ -104,7 +104,7 @@ class Shell(ShellTemplate):
             self.bell_panel.visible = False
 
     def _key(self, event):
-        if event.key == "Escape":
+        if getattr(event, "key", None) == "Escape":
             self.menu.visible = False
             self.bell_panel.visible = False
 

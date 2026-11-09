@@ -53,5 +53,5 @@ class EntryRow(EntryRowTemplate):
         self.parent.raise_event("x-open", entry_id=self.item["id"])
 
     def _key(self, event):
-        if event.key == "Enter" and str(getattr(event.target, "tagName", "")) != "INPUT":
+        if getattr(event, "key", None) == "Enter" and str(getattr(event.target, "tagName", "")) != "INPUT":
             self.parent.raise_event("x-open", entry_id=self.item["id"])
