@@ -777,10 +777,9 @@ db_schema:
     server: full
     title: Users
 metadata:
-  description: A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories,
-    and let people track what happens to their idea.
-  logo_img: asset:icon-512.png
-  title: 'Prepsto: customer feedback panel to user stories'
+  description: "A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea."
+  logo_img: "asset:icon-512.png"
+  title: "Prepsto: customer feedback panel to user stories"
 name: Prepsto
 native_deps:
   head_html: |
@@ -804,7 +803,7 @@ native_deps:
     <meta name="twitter:description" content="A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.">
     <meta name="twitter:image" content="https://prepsto.com/_/theme/og-image.png">
     <link rel="alternate" type="text/plain" title="Prepsto for AI assistants" href="https://prepsto.com/llms.txt">
-    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "@id": "https://prepsto.com/#app", "name": "Prepsto", "url": "https://prepsto.com/", "description": "A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.", "image": "https://prepsto.com/_/theme/og-image.png", "inLanguage": "en", "publisher": {"@id": "https://arkvital.com/#org"}, "keywords": "customer feedback widget, feedback button for website, user feedback tool, feature request tracking, user stories from feedback, feedback triage, closed-loop feedback, product feedback board, embed feedback form", "applicationCategory": "BusinessApplication", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern web browser", "featureList": ["A feedback panel from one link or one script tag; no cookies", "Bug, idea, praise and question chips, optional stars and email", "A private tracking link for every message: received, planned, done", "Triage into user stories with the customers' own words", "Export to Markdown, Gherkin, Jira or CSV"], "audience": {"@type": "Audience", "audienceType": "Makers of websites and apps who want to hear from their users"}}, {"@type": "WebSite", "@id": "https://prepsto.com/#site", "url": "https://prepsto.com/", "name": "Prepsto", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Service", "@id": "https://prepsto.com/#app", "name": "Prepsto", "url": "https://prepsto.com/", "description": "A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea.", "image": "https://prepsto.com/_/theme/og-image.png", "serviceType": "Collect customer feedback and turn it into user stories", "provider": {"@id": "https://arkvital.com/#org"}, "areaServed": "Worldwide", "availableChannel": {"@type": "ServiceChannel", "serviceUrl": "https://prepsto.com/", "name": "Web browser"}, "availableLanguage": "en", "audience": {"@type": "Audience", "audienceType": "Makers of websites and apps who want to hear from their users"}}, {"@type": "WebSite", "@id": "https://prepsto.com/#site", "url": "https://prepsto.com/", "name": "Prepsto", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
     <!-- seo:end -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
