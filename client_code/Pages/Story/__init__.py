@@ -155,7 +155,7 @@ class Story(StoryTemplate):
         window.document.removeEventListener("keydown", self._keys)
 
     def _key(self, event):
-        if (event.ctrlKey or event.metaKey) and getattr(event, "key", None) == "s":
+        if (getattr(event, "ctrlKey", False) or getattr(event, "metaKey", False)) and getattr(event, "key", None) == "s":
             event.preventDefault()
             self.dirty = True
             self.save()
