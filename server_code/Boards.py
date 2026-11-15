@@ -19,7 +19,7 @@ DEFAULT_KINDS = ["bug", "idea", "praise", "question"]
 DEFAULTS = {"prompt": "How can we make this better?", "thanks": "Thank you! We read every message.",
             "label": "Feedback", "color": "#2b59ff", "position": "right"}
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
-MAX_BOARDS = 60
+MAX_BOARDS = 100
 SUBMITS_PER_HOUR = 12
 
 

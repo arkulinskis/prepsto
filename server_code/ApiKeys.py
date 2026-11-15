@@ -99,7 +99,7 @@ def create_api_key(name, scopes=None, link_ids=None, days=90):
         return C.fail("That's a lot of new keys in one hour. Please try again later.")
     mine = {b.get_id(): b for b in Boards.my_boards(me)}
     ids = []
-    for i in (link_ids if isinstance(link_ids, list) else [])[:60]:
+    for i in (link_ids if isinstance(link_ids, list) else [])[:100]:
         if i not in mine:
             return C.fail("You can only give a key access to links you're on.")
         if i not in ids:
