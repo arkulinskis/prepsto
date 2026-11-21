@@ -1,36 +1,5 @@
 allow_embedding: true
 db_schema:
-  error_log:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: when
-      type: datetime
-    - admin_ui: {order: 1, width: 120}
-      name: source
-      type: string
-    - admin_ui: {order: 2, width: 160}
-      name: kind
-      type: string
-    - admin_ui: {order: 3, width: 300}
-      name: message
-      type: string
-    - admin_ui: {order: 4, width: 300}
-      name: traceback
-      type: string
-    - admin_ui: {order: 5, width: 200}
-      name: page
-      type: string
-    - admin_ui: {order: 6, width: 120}
-      name: session
-      type: string
-    - admin_ui: {order: 7, width: 200}
-      name: user
-      target: users
-      type: link_single
-    indexes: []
-    server: full
-    title: Error log
   api_keys:
     client: none
     columns:
@@ -246,6 +215,11 @@ db_schema:
         width: 200
       name: public_track
       type: bool
+    - admin_ui:
+        order: 17
+        width: 200
+      name: roadmap
+      type: bool
     indexes: []
     server: full
     title: Boards
@@ -407,6 +381,53 @@ db_schema:
     indexes: []
     server: full
     title: Entries
+  error_log:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: when
+      type: datetime
+    - admin_ui:
+        order: 1
+        width: 120
+      name: source
+      type: string
+    - admin_ui:
+        order: 2
+        width: 160
+      name: kind
+      type: string
+    - admin_ui:
+        order: 3
+        width: 300
+      name: message
+      type: string
+    - admin_ui:
+        order: 4
+        width: 300
+      name: traceback
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: page
+      type: string
+    - admin_ui:
+        order: 6
+        width: 120
+      name: session
+      type: string
+    - admin_ui:
+        order: 7
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    indexes: []
+    server: full
+    title: Error log
   feedback:
     client: none
     columns:
@@ -659,6 +680,21 @@ db_schema:
         width: 200
       name: is_demo
       type: bool
+    - admin_ui:
+        order: 15
+        width: 200
+      name: public
+      type: bool
+    - admin_ui:
+        order: 16
+        width: 200
+      name: public_note
+      type: string
+    - admin_ui:
+        order: 17
+        width: 200
+      name: shipped_at
+      type: datetime
     indexes: []
     server: full
     title: Stories
@@ -808,9 +844,10 @@ db_schema:
     server: full
     title: Users
 metadata:
-  description: "A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories, and let people track what happens to their idea."
-  logo_img: "asset:icon-512.png"
-  title: "Prepsto: customer feedback panel to user stories"
+  description: A feedback panel you drop on any site with one link. Collect, triage and turn customer feedback into user stories,
+    and let people track what happens to their idea.
+  logo_img: asset:icon-512.png
+  title: 'Prepsto: customer feedback panel to user stories'
 name: Prepsto
 native_deps:
   head_html: |
@@ -870,9 +907,9 @@ native_deps:
 
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="938ktjj" data-button="false" data-label="Submit feedback" async></script>
-    <link rel="stylesheet" href="_/theme/icons.css?v=f902613793">
-    <link rel="stylesheet" href="_/theme/app.css?v=a76603dcfa">
-    <script src="_/theme/app-kit.js?v=9a0e56786f"></script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=256ef68d13">
+    <link rel="stylesheet" href="_/theme/app.css?v=e3f1dfe85e">
+    <script src="_/theme/app-kit.js?v=89aa07a77b"></script>
     <script src="_/theme/px.js?v=46204cc340"></script>
 package_name: Prepsto
 runtime_options:

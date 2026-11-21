@@ -44,6 +44,7 @@
                 <anvil-component type="CheckBox" name="email_box" prop:text="Ask for an email (optional for them)"></anvil-component>
                 <anvil-component type="CheckBox" name="open_box" prop:text="Open: accepting feedback"></anvil-component>
                 <anvil-component type="CheckBox" name="track_box" prop:text="Let people follow their feedback (a private tracking link with its status, priority and your replies)"></anvil-component>
+                <anvil-component type="CheckBox" name="roadmap_box" prop:text="Public roadmap: a page with the stories you mark public, where visitors can +1 them"></anvil-component>
               </div>
               <div class="ui-row" anvil:name="save_row">
                 <anvil-component type="Button" name="save_button" prop:role='["btn", "btn-primary", "ic-check"]'></anvil-component>
@@ -63,7 +64,8 @@
                 <anvil-component type="Button" name="copy_link_button" prop:text="Copy" prop:role='["btn", "ic-copy"]'></anvil-component>
                 <a class="ui-btn" anvil:name="open_link" href="#" target="_blank" rel="noopener"><i class="ic ic-external"></i>Open</a>
               </div>
-              <p class="lk-step">Share it anywhere: an email, a QR code, your app's menu or help page. It opens the panel full screen.</p>
+              <div class="lk-step" anvil:name="link_step">Share it anywhere: an email, a QR code, your app's menu or help page. It opens the panel full screen.</div>
+              <anvil-component type="Label" name="roadmap_step" prop:role='["lk-step"]'></anvil-component>
             </div>
             <div anvil:name="code_part">
               <pre class="px-code"><anvil-component type="Label" name="code" prop:role='["px-pre"]'></anvil-component></pre>

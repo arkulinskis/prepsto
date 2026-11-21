@@ -114,6 +114,16 @@ def track_link(token):
     return base() + "#t/" + token
 
 
+def roadmap_link(slug):
+    return base() + "#r/" + slug
+
+
+def silent_vote(e):
+    """A roadmap "+1" without a note (Roadmap.is_silent_vote): counted, not quoted."""
+    ctx = e.get("context") or {}
+    return bool(ctx.get("vote")) and not ctx.get("note")
+
+
 def snippet(b):
     return ('<script src="%s_/theme/widget.js" data-prepsto="%s" data-color="%s" data-label="%s" data-position="%s" async></scr'
             'ipt>') % (base(), b["slug"], b["color"], (b.get("label") or "").replace('"', ""), b["position"])
@@ -159,6 +169,7 @@ def mine_list(slug):
 
 
 def mine_add(slug, item):
+    """item = {"t": tracking token, "at": ISO time} (+ "s": the story id of a roadmap "+1"; MineItem ignores it)."""
     everything = dict(state.store_get("mine", {}) or {})
     rest = [x for x in (everything.get(slug) or []) if x.get("t") != item["t"]]
     everything[slug] = ([item] + rest)[:30]
@@ -178,3 +189,64 @@ def mark_seen(token):
 def fresh(it):
     """An update the person hasn't looked at yet (from the team, not their own)."""
     return it.get("last_kind") not in ("received", "sender") and (it.get("last") or "") > seen(it.get("token"))
+
+
+# ------------------------------------------------------------------ "+1 me too" (public roadmap + panel), this browser only
+def voted(slug):
+    """{story id: tracking token or ""} for the stories this browser +1'd on this link."""
+    out = {}
+    for x in mine_list(slug):
+        if x.get("s"):
+            out[x["s"]] = x.get("t") or ""
+    for sid in ((state.store_get("votes", {}) or {}).get(slug) or []):
+        out.setdefault(sid, "")
+    return out
+
+
+def vote_add(slug, story_id, track):
+    """Remember a +1: in "Your feedback" when it has a tracking link, else in a plain list (tracking off)."""
+    if track:
+        mine_add(slug, {"t": track, "at": anvil.js.new(window.Date).toISOString(), "s": story_id})
+        mark_seen(track)
+        return
+    everything = dict(state.store_get("votes", {}) or {})
+    ids = [x for x in (everything.get(slug) or []) if x != story_id]
+    everything[slug] = ([story_id] + ids)[:100]
+    state.store_set("votes", everything)
+
+
+STOP = set("a an and are as at be but by can could do for from get have i if in is it its just let like make me more my "
+           "no not of on or our please so some than that the their them then there these they this to too us very want "
+           "was we what when which while will with would you your yours also really much need needs".split())
+
+
+def words(text):
+    """The words that carry meaning in a text: lower case, 3+ letters, no common little words, a plural 's' dropped."""
+    out, cur = set(), []
+    for ch in (text or "").lower() + " ":
+        if ch.isalnum():
+            cur.append(ch)
+            continue
+        if cur:
+            w = "".join(cur)
+            cur = []
+            if len(w) >= 3 and w not in STOP:
+                out.add(w[:-1] if len(w) > 4 and w.endswith("s") else w)
+    return out
+
+
+def matches(text, ideas, limit=3):
+    """Public roadmap stories that look like what someone is typing (word overlap), best first."""
+    mine = words(text)
+    if len(mine) < 2:
+        return []
+    scored = []
+    for idea in ideas or []:
+        theirs = words(idea.get("title"))
+        if not theirs:
+            continue
+        common = len(mine & theirs)
+        if common >= 2 or (common == 1 and len(theirs) <= 2):
+            scored.append((common / float(len(theirs)), common, idea))
+    scored.sort(key=lambda x: (-x[0], -x[1]))
+    return [x[2] for x in scored[:limit]]

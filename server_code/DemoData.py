@@ -11,11 +11,11 @@ import datetime as dt
 from anvil.tables import app_tables
 
 from . import common as C
-from . import Samples, Tracking
+from . import Samples, Tracking, Roadmap
 
 DEMO_SLUG = "demo"
 DEMO_TRACK = "demo"
-DEMO_VERSION = 2  # bump to reload the demo everywhere once (2: tracking timelines + #t/demo)
+DEMO_VERSION = 3  # bump to reload the demo everywhere once (2: tracking timelines + #t/demo; 3: public roadmap #r/demo)
 DEMO_USERS = [
     ("Prepsto Team", "team.demo@example.com"),
     ("Maya Chen", "maya.demo@example.com"),     # teammates on the demo link
@@ -38,7 +38,7 @@ def ensure_loaded():
     elif st == "loaded":
         if app_tables.boards.get(slug=DEMO_SLUG) is None:  # lost (e.g. a reload that failed half-way): bring it back
             load()
-        elif C.get_setting("demo_version", 1) != DEMO_VERSION and Tracking.available():
+        elif C.get_setting("demo_version", 1) != DEMO_VERSION and Tracking.available() and Roadmap.available():
             load()  # upgrade once, only when the database has the new columns
 
 
@@ -55,6 +55,9 @@ def load():
                                   label="Feedback", color="#2b59ff", position="right",
                                   kinds=["bug", "idea", "praise", "question", "other"], ask_email=True, ask_rating=True,
                                   is_open=True, is_sample=False, created=C.now() - dt.timedelta(days=20), is_demo=True)
+    roadmap = Roadmap.available()
+    if roadmap:
+        b["roadmap"] = True  # #r/demo (the landing page's "See a public roadmap")
     tracking = Tracking.available()
     Samples.fill(b, users[0], is_demo=True, tracking=tracking)
     for u in users[1:]:
@@ -71,7 +74,7 @@ def load():
         lea[0]["track"] = DEMO_TRACK  # the landing page's "See what the sender sees" (#t/demo)
     C.set_setting("demo", "loaded")
     if tracking:
-        C.set_setting("demo_version", DEMO_VERSION)
+        C.set_setting("demo_version", DEMO_VERSION if roadmap else 2)  # 2: reload once more after the roadmap columns arrive
     return counts()
 
 

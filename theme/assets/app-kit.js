@@ -66,6 +66,8 @@
     list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
     download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
     flag: '<path d="M5 21V4h11l-2 4 2 4H5"/>',
+    vote: '<path d="M12 19V6"/><path d="m6 11 6-6 6 6"/>',
+    announce: '<path d="M4 10v4a1 1 0 0 0 1 1h3l5 4V5L8 9H5a1 1 0 0 0-1 1z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19.5 6.5a8 8 0 0 1 0 11"/>',
     wand: '<path d="m4 20 11-11M14 4v3M18.5 5.5l-2 2M20 10h-3M12.5 9.5l2 2"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     pulse: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',

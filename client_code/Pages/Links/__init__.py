@@ -8,8 +8,9 @@ from ... import px, router, state
 SWATCHES = ["#2b59ff", "#0c0e14", "#ff5a1f", "#0f8a5f", "#7c3aed", "#e11d74", "#0891b2"]
 BLANK: dict = {"id": "", "name": "", "site_url": "", "prompt": "How can we make this better?", "thanks": "Thank you! We read every message.",
          "label": "Feedback", "color": "#2b59ff", "position": "right", "kinds": ["bug", "idea", "praise", "question"],
-         "ask_email": True, "ask_rating": True, "is_open": True, "public_track": True, "slug": "preview", "role": "owner"}
-TABS = [("script", "Script", "code"), ("link", "Link", "link"), ("button", "Own button", "sliders"), ("html", "HTML link", "external")]
+         "ask_email": True, "ask_rating": True, "is_open": True, "public_track": True, "roadmap": False, "slug": "preview", "role": "owner"}
+TABS = [("script", "Script", "code"), ("link", "Link", "link"), ("button", "Own button", "sliders"), ("html", "HTML link", "external"),
+        ("roadmap", "Roadmap", "map")]
 
 
 class Links(LinksTemplate):
@@ -68,6 +69,7 @@ class Links(LinksTemplate):
         state.set_control_attr(self.position_box, "aria-label", "Button position")
         self.rating_box.checked, self.email_box.checked = bool(b.get("ask_rating")), bool(b.get("ask_email"))
         self.open_box.checked, self.track_box.checked = bool(b.get("is_open")), b.get("public_track") is not False
+        self.roadmap_box.checked = bool(b.get("roadmap"))
         kinds = list(b.get("kinds") or [])
         order = kinds + [k for k in px.KIND_ORDER if k not in kinds]
         self.kinds_panel.items = [{"kind": k, "on": k in kinds, "enabled": not ro} for k in order]
@@ -75,7 +77,7 @@ class Links(LinksTemplate):
         self.dom_nodes["color_input"].value = self.color
         self.dom_nodes["color_input"].disabled = ro
         for box in (self.name_box, self.site_box, self.prompt_box, self.label_box, self.thanks_box, self.position_box,
-                    self.rating_box, self.email_box, self.open_box, self.track_box):
+                    self.rating_box, self.email_box, self.open_box, self.track_box, self.roadmap_box):
             box.enabled = not ro
         self.save_row.visible = not ro
         self.save_button.text = "Create link" if is_new else "Save changes"
@@ -94,7 +96,7 @@ class Links(LinksTemplate):
                 "position": self.position_box.selected_value or "right",
                 "kinds": [it["kind"] for it in self.kinds_panel.items if it.get("on")],
                 "ask_email": self.email_box.checked, "ask_rating": self.rating_box.checked, "is_open": self.open_box.checked,
-                "public_track": self.track_box.checked}
+                "public_track": self.track_box.checked, "roadmap": self.roadmap_box.checked}
 
     def _typed(self, event):
         state.cancel(self._timer)
@@ -145,6 +147,10 @@ class Links(LinksTemplate):
     def track_box_change(self, **event_args):
         self._paint()
 
+    @handle("roadmap_box", "change")
+    def roadmap_box_change(self, **event_args):
+        self._paint()
+
     @handle("save_button", "click")
     def save_button_click(self, **event_args):
         is_new = not self.cur.get("id")
@@ -166,10 +172,18 @@ class Links(LinksTemplate):
     def _install(self):
         b = self.cur
         self.tabs_panel.items = [{"key": k, "label": label, "icon": ic, "on": self.tab == k} for k, label, ic in TABS]
-        self.link_part.visible, self.code_part.visible = self.tab == "link", self.tab != "link"
-        link = px.link(b)
+        road = self.tab == "roadmap"
+        self.link_part.visible, self.code_part.visible = self.tab in ("link", "roadmap"), self.tab not in ("link", "roadmap")
+        link = px.roadmap_link(b["slug"]) if road else px.link(b)
         self.url_box.text = link
         state.set_attr(self.open_link, "href", link)
+        self.link_step.visible, self.roadmap_step.visible = not road, road
+        if road:
+            self.roadmap_step.text = ("Your public roadmap and changelog: the stories you tick “Show on public roadmap”, in "
+                                      "Considering, Planned, Building and Shipped. Visitors can +1 them. Link it from your site, "
+                                      "help page or release notes." if b.get("roadmap") else
+                                      "It's off: tick “Public roadmap” above and save, then tick “Show on public "
+                                      "roadmap” on the stories you want to share. Until then the link says it isn't public.")
         if self.tab == "script":
             self._code = px.snippet(b)
         elif self.tab == "button":
@@ -191,7 +205,7 @@ class Links(LinksTemplate):
 
     @handle("copy_link_button", "click")
     def copy_link_button_click(self, **event_args):
-        state.copy(px.link(self.cur), "Link copied")
+        state.copy(self.url_box.text or px.link(self.cur), "Link copied")
 
     @handle("copy_code_button", "click")
     def copy_code_button_click(self, **event_args):

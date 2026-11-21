@@ -165,14 +165,17 @@ def track_get(token):
     current = stage(r)
     keys = [k for k, _ in STEPS]
     at = keys.index(current) if current in keys else -1
-    from . import Boards  # here, not at the top: Boards imports this module
+    from . import Boards, Roadmap  # here, not at the top: they import this module
+    public = story is not None and C.col(story, "public") is True and Roadmap.roadmap_on(b)
     return C.ok(
         board={"name": b["name"], "color": b["color"] or "#2b59ff", "site_url": b["site_url"] or "", "is_open": b["is_open"] is not False},
         entry={"kind": r["kind"], "kind_label": Boards.KINDS.get(r["kind"], "Other"), "message": r["message"],
                "created": C.iso(r["created"]), "updated": C.iso(r["updated"]), "priority": r["priority"] or ""},
         stage=current, stage_label=STAGE_LABELS.get(current, current),
         steps=[{"key": k, "label": l, "done": 0 <= i <= at, "current": i == at} for i, (k, l) in enumerate(STEPS)],
-        story={"title": story["title"], "status": story["status"] or "draft"} if story is not None else None,
+        story={"title": story["title"], "status": story["status"] or "draft",
+               "note": (C.col(story, "public_note") or "") if public else ""} if story is not None else None,
+        roadmap=b["slug"] if public else None,  # the story is on the link's public roadmap: link to it
         supporters=supporters(r), updates=timeline(r))
 
 
@@ -238,13 +241,19 @@ def reply_as(me, entry_id, text, limit=True):
         return C.fail("Write something first.")
     if limit and C.rate_limited("update", 120, 3600):
         return C.fail("That's a lot of updates in one hour. Please try again later.")
+    reply_row(me, r, text)
+    return C.ok(tracking=team_view(r, me))
+
+
+def reply_row(me, r, text):
+    """The public reply itself, for an entry the caller already checked (reply_as, Stories.announce_as)."""
     ensure_track(r)
-    log(r, "reply", text=text, author=me)
+    u = log(r, "reply", text=text, author=me)
     r.update(reply_waiting=False, updated=C.now())
     if r["status"] == "new":
         r["status"] = "reviewing"
         log(r, "status", "reviewing", author=me)
-    return C.ok(tracking=team_view(r, me))
+    return u
 
 
 @anvil.server.callable(require_user=True)

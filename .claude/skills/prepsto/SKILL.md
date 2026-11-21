@@ -105,6 +105,29 @@ changing text, Buttons with roles, JS only for engines). Prepsto specifics:
   `prepsto-skill.md` = a Claude Code skill for the ticket workflow (reply to senders only with the user's OK).
 - New API field: add it to `ticket()` in ApiRoutes (check it leaks nothing), the CLI's printing, the MCP schema, tests.
 
+## Public roadmap, "+1 me too", Update everyone (2026-11-20)
+
+- `server_code/Roadmap.py`: PUBLIC `roadmap_get(slug)` (fails when `boards.roadmap` isn't True; returns only
+  {id, title, note, status, asked, shipped} per public story + the board's name/colour/site/is_open/ask_email/tracking) and
+  `roadmap_vote(slug, story_id, note, email, website)` (honeypot, one vote per story per session, 20/hour, refused on
+  closed links, private or other links' stories, shipped stories). A vote = an `entries` row: kind idea, tags ["+1"],
+  context {"vote": True, "note": bool}, linked to the story, with a track token. `Roadmap.is_silent_vote(r)` = no note.
+- New columns: `boards.roadmap`, `stories.public`, `stories.public_note`, `stories.shipped_at` (set when a story becomes
+  shipped). All read with `C.col`/guarded searches; written in their own try (Boards._write retries without the newer
+  columns, Stories._save_public, Samples._public): everything works as before until the Schema Mismatch is accepted.
+  `Roadmap.available()` probes them; the demo (DEMO_VERSION 3, roadmap on for `#r/demo`) only reloads once they exist.
+- `widget_config` adds `roadmap` (bool) and, only when it's on, `ideas` (30 public unshipped {id, title}); the panel's
+  word matching is `px.matches` (in the browser, debounced). widget.js is untouched.
+- `Inbox.inbox_view` hides silent votes unless tag "+1" or status "all" without `hide_votes` (the board view sets it);
+  returns `silent_votes` for the Inbox chip. GET /v1/tickets inherits this.
+- `Stories.announce_story` / `announce_as` (+ POST /v1/stories/<id>/announce, reply scope, never returns emails): posts
+  through `Tracking.reply_row` to every linked entry (max 500) when tracking is on, adds a team comment saying so, returns
+  {posted, total, tracking_off, emails}.
+- Browser: `px.voted(slug)` / `px.vote_add` remember +1s ("Your feedback" gets {"t","at","s"}; tracking-off votes go to
+  the `votes` store). Pages/Roadmap (Bare layout, `page-r`), Items/RoadmapCard, Items/IdeaMatch, Dialogs/Announce.
+- Local App Server: adding several columns to one table at once loses some (ANVIL_NOTES); a clean `prepsto-data` volume
+  or a few `--restart`s fixes it. Hosted Anvil is fine.
+
 ## Recipes
 
 - **New page:** Pages/X + router PAGES/_form (+ NAV), add to tools/ui/phone.js and a11y.js, a journey in flow.js.

@@ -5,7 +5,7 @@ Links in templates are plain <a href="#inbox">; code calls router.go("story", id
 
     PAGES[name] = (who may open it, browser-tab title)   who: None = anyone, "guest" = signed out only, "user", "admin"
     NAV = the main menu for members (header + phone tab bar): (page, label, icon). At most 4.
-    The public panel (#f) and tracking page (#t) use the Bare layout (no header or footer): they carry the creator's colour.
+    The public panel (#f), tracking page (#t) and roadmap (#r) use the Bare layout (no header or footer): they carry the creator's colour.
 New page: add it to PAGES, to _form() and (if it belongs in the menu) to NAV.
 """
 import anvil
@@ -18,6 +18,7 @@ PAGES = {
     "landing": (None, "Customer feedback to user stories"),
     "f": (None, "Feedback"),
     "t": (None, "Track your feedback"),
+    "r": (None, "Roadmap"),
     "join": (None, "Join a team"),
     "auth": ("guest", "Sign in"),
     "home": ("user", "Overview"),
@@ -45,6 +46,9 @@ def _form(name):
     if name == "t":
         from .Pages.Track import Track
         return Track
+    if name == "r":
+        from .Pages.Roadmap import Roadmap
+        return Roadmap
     if name == "join":
         from .Pages.Join import Join
         return Join

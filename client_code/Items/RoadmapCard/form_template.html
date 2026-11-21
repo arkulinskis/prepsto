@@ -1,0 +1,27 @@
+<div class="rm-card-host">
+  <article class="rm-card">
+    <anvil-component type="Label" name="title" prop:role='["rm-card-title"]'></anvil-component>
+    <anvil-component type="Label" name="note" prop:role='["rm-card-note"]'></anvil-component>
+    <div class="rm-card-foot">
+      <anvil-component type="Label" name="asked" prop:role='["rm-asked", "ic-vote"]'></anvil-component>
+      <anvil-component type="Label" name="shipped" prop:role='["rm-shipped"]'></anvil-component>
+      <anvil-component type="Button" name="vote_button" prop:text="+1" prop:role='["btn", "btn-sm", "rm-vote", "ic-vote"]'></anvil-component>
+      <div class="rm-voted" anvil:name="voted_part"><i class="ic ic-check"></i><span>You +1'd this</span><a anvil:name="track_link" href="#" target="_blank" rel="noopener">Track it</a></div>
+    </div>
+    <div class="rm-vote-form" anvil:name="form_part">
+      <label class="ui-field"><span>Anything to add? <em>(optional)</em></span>
+        <anvil-component type="TextBox" name="note_box" prop:placeholder="e.g. I need this for my weekly reports"></anvil-component>
+      </label>
+      <label class="ui-field" anvil:name="email_part"><span>Email <em>(optional, for a reply)</em></span>
+        <anvil-component type="TextBox" name="email_box" prop:type="email" prop:placeholder="you@example.com"></anvil-component>
+      </label>
+      <div class="px-hp" aria-hidden="true"><anvil-component type="TextBox" name="hp_box"></anvil-component></div>
+      <anvil-component type="Label" name="error" prop:role='["msg-error"]' prop:visible="false"></anvil-component>
+      <div class="ui-row">
+        <anvil-component type="Button" name="send_button" prop:text="Send my +1" prop:role='["btn", "btn-sm", "px-send", "ic-vote"]'></anvil-component>
+        <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-sm", "btn-ghost"]'></anvil-component>
+      </div>
+      <div class="rm-form-note">No account needed. Your +1 goes to the team, never on this page.</div>
+    </div>
+  </article>
+</div>

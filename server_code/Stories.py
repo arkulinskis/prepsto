@@ -7,10 +7,12 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Boards, Inbox, Insights, Team, Tracking
+from . import Boards, Inbox, Insights, Roadmap, Team, Tracking
 
 STATUSES = ["draft", "ready", "in_progress", "shipped"]
 PRIORITIES = ["", "low", "medium", "high", "urgent"]
+ANNOUNCE_MAX = 500  # linked feedback one "Update everyone who asked" reaches
+ANNOUNCES_PER_HOUR = 10
 
 
 def owned_story(story_id, me):
@@ -28,7 +30,9 @@ def story_dict(s, me, full=False):
          "status": s["status"] or "draft", "points": s["points"], "source": s["source"] or "manual",
          "created": C.iso(s["created"]), "updated": C.iso(s["updated"]), "feedback_count": len(linked),
          "kinds": sorted(set(e["kind"] for e in linked)),
-         "comment_count": len(app_tables.comments.search(story=s)), "author": C.name_of(s["owner"])}
+         "comment_count": len(app_tables.comments.search(story=s)), "author": C.name_of(s["owner"]),
+         "public": C.col(s, "public") is True, "public_note": C.col(s, "public_note") or "",
+         "shipped_at": C.iso(C.col(s, "shipped_at"))}
     if full:
         entries = []
         for e in linked:
@@ -90,7 +94,10 @@ def story_view(me, story_id):
         [{"author": c["author"], "body": c["body"]} for c in d["comments"]])
     pool = [Inbox.entry_dict(e) for e in app_tables.entries.search(tables.order_by("created", ascending=False), board=s["board"])
             if e["story"] is None and e["status"] != "archived"][:60]
-    return C.ok(story=d, bundle=bundle, pool=pool, statuses=STATUSES, provider=Insights.PROVIDER, team=Team.team_list(s["board"]))
+    b = s["board"]
+    return C.ok(story=d, bundle=bundle, pool=pool, statuses=STATUSES, provider=Insights.PROVIDER, team=Team.team_list(b),
+                roadmap={"on": Roadmap.roadmap_on(b), "slug": b["slug"], "board_id": b.get_id()},
+                tracking=Tracking.tracking_on(b))
 
 
 @anvil.server.callable(require_user=True)
@@ -140,6 +147,7 @@ def save_story_as(me, story_id, data, partial=False):
     if partial:
         cur = {k: s[k] for k in ("title", "persona", "goal", "benefit", "notes", "priority", "status", "points")}
         cur["acceptance"] = list(s["acceptance"] or [])
+        cur["public"], cur["public_note"] = C.col(s, "public") is True, C.col(s, "public_note") or ""
         cur.update({k: v for k, v in (data if isinstance(data, dict) else {}).items() if k in cur})
         data = cur
     d = _clean(data)
@@ -148,10 +156,68 @@ def save_story_as(me, story_id, data, partial=False):
     d["updated"] = C.now()
     was = s["status"] or "draft"
     s.update(**d)
+    _save_public(s, data, d["status"] == "shipped" and was != "shipped")
     if d["status"] != was and d["status"] != "draft":  # tell the people who asked for it: work started, shipped...
         for e in app_tables.entries.search(story=s):
             Tracking.log(e, "story_status", d["status"], author=me)
     return C.ok(story=story_dict(s, me))
+
+
+def _save_public(s, data, just_shipped):
+    """The roadmap columns, each in its own guarded write: story saving works before the Schema Mismatch is accepted."""
+    data = data if isinstance(data, dict) else {}
+    if "public" in data:
+        try:
+            s["public"] = bool(data.get("public"))
+        except Exception as ex:
+            print("stories.public not in the database yet:", ex)
+    if "public_note" in data:
+        try:
+            s["public_note"] = C.text(data.get("public_note"), Roadmap.NOTE_LIMIT)
+        except Exception as ex:
+            print("stories.public_note not in the database yet:", ex)
+    if just_shipped:  # the changelog's date
+        try:
+            s["shipped_at"] = C.now()
+        except Exception as ex:
+            print("stories.shipped_at not in the database yet:", ex)
+
+
+@anvil.server.callable(require_user=True)
+def announce_story(story_id, text):
+    """"Update everyone who asked": one message on the tracking page of every piece of feedback linked to the story
+    (votes included). Prepsto sends no email: the reply lists the addresses people left, for the team's own mail app."""
+    return announce_as(C.require_user(), story_id, text)
+
+
+def announce_as(me, story_id, text, limit=True):
+    s = owned_story(story_id, me)
+    if s is None:
+        return C.fail("That story doesn't exist (any more).")
+    text = C.text(text, 2000, multiline=True)
+    if len(text) < 2:
+        return C.fail("Write the update first.")
+    rows = list(app_tables.entries.search(tables.order_by("created", ascending=True), story=s))[:ANNOUNCE_MAX]
+    if not rows:
+        return C.fail("Nobody has asked for this story yet: link some feedback to it first.")
+    if limit and C.rate_limited("announce", ANNOUNCES_PER_HOUR, 3600):
+        return C.fail("That's a lot of updates in one hour. Please try again later.")
+    tracking = Tracking.tracking_on(s["board"])
+    posted = 0
+    if tracking:
+        for e in rows:
+            if Tracking.reply_row(me, e, text) is not None:
+                posted += 1
+    emails = []
+    for e in rows:
+        mail = (e["email"] or "").strip().lower()
+        if mail and mail not in emails:
+            emails.append(mail)
+    if posted:  # the team sees it was sent (and doesn't send it twice)
+        app_tables.comments.add_row(author=me, story=s, body="Update posted to %d tracking page%s: %s" % (
+            posted, "" if posted == 1 else "s", text[:400]), mentions=[], created=C.now(), is_demo=bool(s["is_demo"]))
+        s["updated"] = C.now()
+    return C.ok(posted=posted, total=len(rows), tracking_off=not tracking, emails=emails)
 
 
 @anvil.server.callable(require_user=True)

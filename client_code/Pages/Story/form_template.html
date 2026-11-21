@@ -7,6 +7,7 @@
         <span class="ui-spacer"></span>
         <anvil-component type="Label" name="saved" prop:text="Saved" prop:role='["sy-saved"]'></anvil-component>
         <anvil-component type="DropDown" name="status_box"></anvil-component>
+        <anvil-component type="Button" name="announce_button" prop:text="Update everyone who asked" prop:role='["btn", "ic-announce"]'></anvil-component>
         <anvil-component type="Button" name="export_button" prop:text="Export" prop:role='["btn", "btn-primary", "ic-download"]'></anvil-component>
         <anvil-component type="Button" name="more_button" prop:text="More" prop:role='["btn", "btn-icon", "ic-more"]'></anvil-component>
       </div>
@@ -40,8 +41,30 @@
         </div>
 
         <div>
+          <section class="ui-card sy-public">
+            <h2 class="sy-h"><i class="ic ic-map"></i>Public roadmap</h2>
+            <anvil-component type="CheckBox" name="public_box" prop:text="Show on public roadmap"></anvil-component>
+            <label class="ui-field" anvil:name="note_field"><span>Public note <em>(optional, 280 characters)</em></span>
+              <anvil-component type="TextArea" name="public_note_box" prop:placeholder="What visitors read under the title. Plain words, no dates." prop:role='["sy-short"]'></anvil-component>
+            </label>
+            <div class="sy-pp" anvil:name="public_preview">
+              <div class="sy-pp-cap">What visitors see <anvil-component type="Label" name="pp_stage" prop:role='["px-inline", "sy-pp-stage"]'></anvil-component></div>
+              <div class="rm-card">
+                <anvil-component type="Label" name="pp_title" prop:role='["rm-card-title"]'></anvil-component>
+                <anvil-component type="Label" name="pp_note" prop:role='["rm-card-note"]'></anvil-component>
+                <div class="rm-card-foot"><anvil-component type="Label" name="pp_asked" prop:role='["rm-asked", "ic-vote"]'></anvil-component></div>
+              </div>
+            </div>
+            <anvil-component type="Label" name="roadmap_hint" prop:role='["ui-hint-label"]'></anvil-component>
+            <div class="ui-row sy-pp-links">
+              <a class="ui-btn sm" anvil:name="roadmap_open" href="#" target="_blank" rel="noopener"><i class="ic ic-external"></i>Open the roadmap</a>
+              <a class="ui-btn sm" anvil:name="links_open" href="#links"><i class="ic ic-link"></i>Turn it on in Links</a>
+            </div>
+          </section>
+
           <section class="ui-card">
             <h2 class="sy-h"><i class="ic ic-chat"></i><anvil-component type="Label" name="fb_title" prop:role='["px-inline"]'></anvil-component> <anvil-component type="Button" name="add_fb_button" prop:text="Add" prop:role='["btn", "btn-sm", "ic-plus", "push"]'></anvil-component></h2>
+            <anvil-component type="Label" name="votes_line" prop:role='["sy-votes", "ic-vote"]'></anvil-component>
             <anvil-component type="RepeatingPanel" name="quotes_panel" prop:item_template="Prepsto.Items.StoryQuote" prop:role='["sy-fb"]'></anvil-component>
             <anvil-component type="Label" name="no_fb" prop:text="No feedback linked yet. Add some to ground the story in what customers said." prop:role='["small-muted"]'></anvil-component>
           </section>

@@ -13,6 +13,8 @@ class StoryCard(StoryCardTemplate):
         state.set_attr(self, "href", router.href("story", s["id"]))
         px.story_state(self.state_badge, s.get("status"))
         px.prio(self.prio_badge, s.get("priority"))
+        self.public_badge.visible = bool(s.get("public"))
+        self.public_badge.tooltip = "Shown on the link's public roadmap (if it's switched on)"
         self.points.visible = s.get("points") is not None
         self.points.text = "%s pts" % s.get("points")
         if s.get("persona") or s.get("goal"):

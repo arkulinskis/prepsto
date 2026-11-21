@@ -26,9 +26,13 @@ class FeedbackPanel(FeedbackPanelTemplate):
         self.b, self.opts = {}, {}
         self._on_close, self._on_sent = _nothing, _nothing
         self.kind, self.rating, self.items, self.mine, self._track = "", 0, None, [], ""
+        self._idea_timer = None
         super().__init__(**properties)
         self._stars = [self.s1, self.s2, self.s3, self.s4, self.s5]
         self.kinds_panel.add_event_handler("x-kind", self._pick_kind)
+        self.ideas_panel.add_event_handler("x-vote", self._vote)
+        state.control(self.message_box).addEventListener("input", anvil.js.report_exceptions(self._typed))
+        self.ideas_part.visible = self.roadmap_link.visible = False
         state.set_control_attr(self.message_box, "maxlength", "4000")
         state.set_control_attr(self.email_box, "autocomplete", "email")
         hp = state.control(self.hp_box)
@@ -67,6 +71,11 @@ class FeedbackPanel(FeedbackPanelTemplate):
         self.email_part.visible = bool(b.get("ask_email"))
         self._paint_stars()
         self._mine_bar()
+        slug = b.get("slug") or ""
+        self.roadmap_link.visible = bool(b.get("roadmap")) and bool(slug)  # only links with a public roadmap (#r/<code>)
+        if self.roadmap_link.visible:
+            state.set_attr(self.roadmap_link, "href", px.roadmap_link(slug) if slug != "preview" else None)
+        self._match()
         if not (self.thanks_part.visible or self.mine_part.visible):
             self._show("form" if b.get("is_open", True) else "closed")
 
@@ -107,7 +116,34 @@ class FeedbackPanel(FeedbackPanelTemplate):
         self.kind = kind
         self.kinds_panel.items = [{"kind": k, "on": k == kind} for k in (self.b.get("kinds") or ["idea"])]
         self.message_box.placeholder = px.PLACEHOLDER.get(kind, "Tell us anything.")
+        self._match()
         state.refocus(self.kinds_panel, key)
+
+    # ------------------------------------------------------------------ "Already on the roadmap" (links with a public roadmap)
+    def _typed(self, event):
+        state.cancel(self._idea_timer)
+        self._idea_timer = state.later(self._match, 350)
+
+    def _match(self):
+        self._idea_timer = None
+        ideas = self.b.get("ideas") or []
+        hits = px.matches(self.message_box.text or "", ideas) if ideas and self.kind == "idea" else []
+        self.ideas_panel.items = hits
+        self.ideas_part.visible = bool(hits)
+
+    def _vote(self, story_id=None, title="", **event_args):
+        """"+1 this instead": the typed words become the +1's note."""
+        self.error.visible = False
+        note = (self.message_box.text or "").strip()[:280]
+        r = anvil.server.call("roadmap_vote", self.b["slug"], story_id, note, self.email_box.text or "", self.hp_box.text or "")
+        if not r.get("ok"):
+            self.error.text, self.error.visible = r.get("error") or "That didn't work.", True
+            return
+        px.vote_add(self.b["slug"], story_id, r.get("track"))
+        if r.get("track"):
+            self.mine, self.items = px.mine_list(self.b["slug"]), None
+        self._thanks("Your +1 is on “%s”. Thanks for adding your voice!" % title, r.get("track"))
+        self._on_sent()
 
     def star_click(self, event):
         n = int(event.currentTarget.getAttribute("data-n"))
@@ -139,6 +175,7 @@ class FeedbackPanel(FeedbackPanelTemplate):
         self.email_box.text = ""
         self.error.visible = False
         self._paint_stars()
+        self._match()
         self._show("form" if self.b.get("is_open", True) else "closed")
         self._mine_bar()
 

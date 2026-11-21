@@ -1,0 +1,29 @@
+<div class="ui an-dlg">
+  <h2 class="dlg-h">Update everyone who asked</h2>
+  <div anvil:name="write_part">
+    <anvil-component type="Label" name="reach" prop:role='["muted", "small"]'></anvil-component>
+    <label class="ui-field"><span>Your message</span>
+      <anvil-component type="TextArea" name="message_box" prop:role='["an-msg"]'></anvil-component>
+    </label>
+    <anvil-component type="Label" name="off_note" prop:role='["msg-note"]'></anvil-component>
+    <anvil-component type="Label" name="error" prop:role='["msg-error"]' prop:visible="false"></anvil-component>
+    <div class="ui-hint">It appears under your name on each person's private tracking page. Prepsto sends no email.</div>
+    <div class="ui-row end an-actions">
+      <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+      <anvil-component type="Button" name="send_button" prop:text="Post the update" prop:role='["btn", "btn-primary", "ic-announce"]'></anvil-component>
+    </div>
+  </div>
+  <div anvil:name="done_part">
+    <div class="an-result">
+      <span class="tick"><i class="ic ic-check"></i></span>
+      <anvil-component type="Label" name="result" prop:role='["an-result-text"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="email_note" prop:role='["muted", "small"]'></anvil-component>
+    <div class="ui-row an-actions">
+      <anvil-component type="Button" name="copy_button" prop:text="Copy emails" prop:role='["btn", "ic-copy"]'></anvil-component>
+      <a class="ui-btn" anvil:name="mail_link" href="#"><i class="ic ic-mail"></i>Open in my mail app</a>
+      <span class="ui-spacer"></span>
+      <anvil-component type="Button" name="close_button" prop:text="Done" prop:role='["btn", "btn-primary"]'></anvil-component>
+    </div>
+  </div>
+</div>

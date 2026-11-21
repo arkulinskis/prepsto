@@ -53,10 +53,10 @@ ENTRIES = [
      "reviewing", "low", False, None),
     (300, "idea", 3, "Noor", "noor@example.com", "/search",
      "Search is great but I'd love filters by tag and date, and to sort results by last edited.",
-     "done", "low", False, None),
+     "done", "low", False, "search"),
     (410, "other", 4, "", "", "/",
      "The onboarding tutorial was a bit confusing at first, but once I got it everything clicked.",
-     "done", "", False, None),
+     "done", "", False, "tour"),
 ]
 
 STORIES: dict = {
@@ -71,6 +71,7 @@ STORIES: dict = {
         "notes": "Two customers hit this in the same week. Likely the table parser running on the main thread.",
         "priority": "high", "status": "ready", "points": 5,
         "comments": ["Reproduced with a 300-row sheet: 4.2s freeze in Chrome.", "Let's move parsing to a worker and add autosave while we're there."],
+        "public_note": "Big pastes from Excel and Google Docs will stop freezing the editor, and autosave will keep your place if a tab ever crashes.",
     },
     "share": {
         "title": "Shared notebooks for teams",
@@ -82,8 +83,54 @@ STORIES: dict = {
         "notes": "Includes the folder-rename bug: shared notes must survive renames.",
         "priority": "medium", "status": "draft", "points": 8,
         "comments": ["Jonas's data-loss report is part of this: fix the rename first."],
+        "public_note": "Invite your team to a notebook and comment on each other's notes. We're making folder renames safe first.",
+    },
+    "dark": {
+        "title": "Dark theme for the editor",
+        "persona": "night-time writer",
+        "goal": "a dark theme for the editor that follows my system setting",
+        "benefit": "my eyes don't hurt when I write late",
+        "acceptance": ["A Light / Dark / System switch in Settings", "System is the default", "Every screen passes WCAG AA contrast in dark",
+                       "A larger text size option sits next to it"],
+        "notes": "Two separate requests; one also asks for bigger fonts, so the text-size option rides along.",
+        "priority": "medium", "status": "in_progress", "points": 5,
+        "comments": ["Design tokens are in; the editor canvas is next."],
+        "public_note": "A dark editor that follows your system setting, plus a bigger text size. Being built now.",
+    },
+    "search": {
+        "title": "Search filters by tag and date",
+        "persona": "power user with hundreds of notes",
+        "goal": "to filter search results by tag and date and sort them by last edited",
+        "benefit": "I find the note I need in seconds",
+        "acceptance": ["Filter by one or more tags", "Filter by a date range", "Sort by relevance or last edited"],
+        "notes": "",
+        "priority": "low", "status": "shipped", "points": 3, "shipped_days": 3,
+        "comments": [],
+        "public_note": "Filter search results by tag and date, and sort them by last edited. Look for the new Filters button in Search.",
+    },
+    "tour": {
+        "title": "A shorter first-run tour",
+        "persona": "new user",
+        "goal": "a first-run tour that gets out of my way",
+        "benefit": "I start writing in under a minute",
+        "acceptance": ["Three steps at most", "Skip on every step", "Replay it from Help"],
+        "notes": "",
+        "priority": "", "status": "shipped", "points": 2, "shipped_days": 11,
+        "comments": [],
+        "public_note": "The tour is now three short steps, and you can skip it or replay it from Help.",
     },
 }
+
+
+def _public(row, s, now):
+    """Roadmap columns in their own guarded write (before the Schema Mismatch is accepted they don't exist yet)."""
+    values = {"public": True, "public_note": s.get("public_note") or "",
+              "shipped_at": now - dt.timedelta(days=s["shipped_days"]) if s.get("shipped_days") else None}
+    for name, value in values.items():
+        try:
+            row[name] = value
+        except Exception as ex:
+            print("stories.%s not in the database yet:" % name, ex)
 
 
 def _tracking(on, hours) -> dict:
@@ -102,6 +149,7 @@ def fill(board, owner, is_demo=False, tracking=True):
         for i, body in enumerate(s["comments"]):
             app_tables.comments.add_row(author=owner, story=stories[key], body=body, is_demo=is_demo,
                                    created=now - dt.timedelta(hours=18 - i * 5))
+        _public(stories[key], s, now)
     for hours, kind, rating, name, email, page, msg, status, prio, star, story in ENTRIES:
         when = now - dt.timedelta(hours=hours)
         ai = Insights.analyze(msg, kind, rating)

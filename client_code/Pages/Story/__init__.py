@@ -7,6 +7,7 @@ from ._anvil_designer import StoryTemplate
 from ... import exports, px, router, state
 
 POINTS = [None, 1, 2, 3, 5, 8, 13, 21]
+STAGE = {"draft": "Considering", "ready": "Planned", "in_progress": "Building", "shipped": "Shipped"}
 
 
 class Story(StoryTemplate):
@@ -19,6 +20,8 @@ class Story(StoryTemplate):
         self.story_id = args[0] if args else ""
         self.S: dict = {}
         self.bundle, self.pool, self.team = None, [], []
+        self.roadmap: dict = {}
+        self.tracking = True
         self.dirty, self._timer = False, None
         self.status_box.items = [(label, key) for key, label in px.STORY_STATUSES]
         self.prio_box.items = [(label, key) for key, label in px.PRIORITIES]
@@ -34,6 +37,10 @@ class Story(StoryTemplate):
             if box is not self.comment_box:
                 el.addEventListener("input", anvil.js.report_exceptions(self._typed))
         state.control(self.title_box).setAttribute("rows", "1")
+        note = state.control(self.public_note_box)
+        note.setAttribute("maxlength", "280")
+        note.setAttribute("aria-label", "Public note")
+        note.addEventListener("input", anvil.js.report_exceptions(self._typed))
         state.set_control_attr(self.more_button, "aria-label", "More")
         self.ac_panel.add_event_handler("x-changed", self._ac_changed)
         self.ac_panel.add_event_handler("x-add", self._ac_add)
@@ -50,6 +57,7 @@ class Story(StoryTemplate):
             router.go("stories")
             return
         self.S, self.bundle, self.pool, self.team = r["story"], r["bundle"], r["pool"], r.get("team") or []
+        self.roadmap, self.tracking = r.get("roadmap") or {}, r.get("tracking") is not False
         self.provider_name = "AI" if r.get("provider") == "ai" else "rules engine"
         window.document.title = self.S["title"] + " · Prepsto"
         self._draw()
@@ -68,10 +76,19 @@ class Story(StoryTemplate):
         pts = s.get("points")
         self.points_box.selected_value = str(int(pts)) if pts is not None and int(pts) in POINTS else ""
         self.notes_box.text = s.get("notes") or ""
-        entries = s.get("entries") or []
-        self.fb_title.text = "Client feedback · %d" % len(entries)
+        everyone = s.get("entries") or []
+        entries = [e for e in everyone if not px.silent_vote(e)]  # note-less roadmap +1s: one line, not one quote each
+        votes = len(everyone) - len(entries)
+        self.fb_title.text = "Client feedback · %d" % len(everyone)
+        self.votes_line.text = state.plural(votes, "+1 vote") + " from the public roadmap, without a note"
+        self.votes_line.visible = votes > 0
         self.quotes_panel.items = entries
-        self.no_fb.visible = not entries
+        self.no_fb.visible = not everyone
+        self.announce_button.text = "Update everyone who asked (%d)" % len(everyone)
+        self.announce_button.visible = bool(everyone)
+        self.public_box.checked = bool(s.get("public"))
+        self.public_note_box.text = s.get("public_note") or ""
+        self._public()
         comments = s.get("comments") or []
         self.cm_title.text = "Supporting comments · %d" % len(comments)
         self.comments_panel.items = comments
@@ -81,6 +98,34 @@ class Story(StoryTemplate):
         self._sentence()
         self._fit()
         window.PX.mentions(state.control(self.comment_box), [{"id": p["id"], "name": p["name"]} for p in self.team])
+
+    def _public(self):
+        """The Public roadmap card: while ticked, the note field and a preview of the visitor's card; and where the roadmap is."""
+        on = bool(self.public_box.checked)
+        self.note_field.visible = self.public_preview.visible = on
+        self.pp_title.text = self.title_box.text or "Untitled story"
+        note = (self.public_note_box.text or "").strip()
+        self.pp_note.text = note
+        self.pp_note.visible = bool(note)
+        stage = STAGE.get(self.status_box.selected_value or "draft", "Considering")
+        self.pp_stage.text = "· " + stage
+        self.pp_asked.text = "%d asked" % len(self.S.get("entries") or [])
+        rm = self.roadmap
+        live = bool(rm.get("on"))
+        self.roadmap_open.visible = live
+        self.links_open.visible = not live and bool(rm.get("board_id"))
+        if live:
+            state.set_attr(self.roadmap_open, "href", px.roadmap_link(rm.get("slug") or ""))
+            if on:
+                self.roadmap_hint.text = ("Visitors see it under %s, and it moves when you change the status. Notes, criteria "
+                                          "and comments stay private." % stage)
+            else:
+                self.roadmap_hint.text = "Only the stories you tick appear on the roadmap: the title and the public note, nothing else."
+        else:
+            if rm.get("board_id"):
+                state.set_attr(self.links_open, "href", router.href("links", rm["board_id"]))
+            self.roadmap_hint.text = ("The public roadmap of %s is switched off. Turn on “Public roadmap” in Links "
+                                      "to share it." % (self.S.get("board") or "this link"))
 
     def _sentence(self):
         self.p_persona.text = self.persona_box.text or "…"
@@ -102,7 +147,8 @@ class Story(StoryTemplate):
                 "benefit": self.benefit_box.text or "", "notes": self.notes_box.text or "",
                 "priority": self.prio_box.selected_value or "", "status": self.status_box.selected_value or "draft",
                 "points": int(p) if p else None,
-                "acceptance": [r["text"].strip() for r in self.ac_panel.items if (r.get("text") or "").strip()]}
+                "acceptance": [r["text"].strip() for r in self.ac_panel.items if (r.get("text") or "").strip()],
+                "public": bool(self.public_box.checked), "public_note": (self.public_note_box.text or "").strip()}
 
     def _mark(self, text):
         self.saved.text = text
@@ -114,6 +160,7 @@ class Story(StoryTemplate):
         state.cancel(self._timer)
         self._timer = state.later(self.save, 900)
         self._sentence()
+        self._public()
 
     def _typed(self, event):
         self._fit()
@@ -164,6 +211,14 @@ class Story(StoryTemplate):
     def status_box_change(self, **event_args):
         self.dirty = True
         self.save()
+        self._public()
+
+    @handle("public_box", "change")
+    def public_box_change(self, **event_args):
+        self._public()
+        self.dirty = True
+        if self.save():
+            state.toast("On the public roadmap" if self.public_box.checked else "Taken off the public roadmap", "ok")
 
     @handle("prio_box", "change")
     def prio_box_change(self, **event_args):
@@ -260,6 +315,13 @@ class Story(StoryTemplate):
         s = dict(self.S)
         s.update(self._values())
         return s
+
+    @handle("announce_button", "click")
+    def announce_button_click(self, **event_args):
+        self.save()
+        from ...Dialogs.Announce import Announce
+        if alert(Announce(story=self._current(), tracking=self.tracking), buttons=[], role="app-dialog", large=True):
+            self._load()
 
     @handle("export_button", "click")
     def export_button_click(self, **event_args):

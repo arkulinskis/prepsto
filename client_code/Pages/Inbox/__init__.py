@@ -49,7 +49,7 @@ class Inbox(InboxTemplate):
 
     # ------------------------------------------------------------------ data
     def _load(self, **event_args):
-        q = dict(self.f, status="all" if self.mode == "board" else self.f["status"])
+        q = dict(self.f, status="all" if self.mode == "board" else self.f["status"], hide_votes=self.mode == "board")
         d = state.call_quiet("get_inbox", q)
         if d is None:
             d = state.call("get_inbox", q)
@@ -88,6 +88,10 @@ class Inbox(InboxTemplate):
         self.mine_button.role = ["btn", "btn-sm", "ic-user"] + (["on"] if f["mine"] else [])
         state.set_control_attr(self.starred_button, "aria-pressed", "true" if f["starred"] else "false")
         state.set_control_attr(self.mine_button, "aria-pressed", "true" if f["mine"] else "false")
+        silent = d.get("silent_votes") or 0  # note-less roadmap +1s kept out of this view (Inbox.inbox_view)
+        self.votes_button.text = "+1 votes · %d" % silent
+        self.votes_button.visible = bool(silent) and f["tag"] != "+1"
+        state.set_control_attr(self.votes_button, "aria-label", "Show %s from the public roadmap" % state.plural(silent, "+1 vote"))
         self.clear_button.visible = bool(f["board"] or f["kind"] or f["tag"] or f["starred"] or f["mine"] or f["q"])
         self.list_part.visible, self.board_part.visible = self.mode == "list", self.mode == "board"
         if self.mode == "board":
@@ -169,6 +173,10 @@ class Inbox(InboxTemplate):
     @handle("mine_button", "click")
     def mine_button_click(self, **event_args):
         self._filter("mine", not self.f["mine"])
+
+    @handle("votes_button", "click")
+    def votes_button_click(self, **event_args):
+        self._filter("tag", "+1")
 
     @handle("clear_button", "click")
     def clear_button_click(self, **event_args):

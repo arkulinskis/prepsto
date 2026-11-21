@@ -1515,3 +1515,128 @@ anvil-dropzone { display: contents; }
   .ib-col { scroll-snap-align: start; }
 }
 
+/* =====================================================================================================
+   Public roadmap + changelog (#r/<code>, Pages/Roadmap + Items/RoadmapCard), "+1 me too", the panel's
+   "Already on the roadmap", the story editor's Public roadmap card, Update everyone who asked (Dialogs/Announce).
+   Motion uses the design kit's curves (with fallbacks: the kit block is not in this app's CSS yet).
+   ===================================================================================================== */
+.page-r.ui-shell { background: var(--c-surface-2); }
+.page-r .ui-main { padding: 28px 16px 48px; }
+.rm { max-width: 1200px; margin: 0 auto; display: grid; gap: 16px; }
+.rm-top { display: flex; align-items: center; gap: 12px; }
+.rm-top .mark { width: 42px; height: 42px; border-radius: 10px; background: var(--pc); color: #fff; display: grid; place-items: center; flex: none; }
+.rm-top .mark .ic { width: 22px; height: 22px; }
+.rm-title { min-width: 0; }
+.anvil-role-rm-board { font: 600 clamp(1.4rem, 3vw, 1.9rem)/1.15 var(--font-display); letter-spacing: -.015em; color: var(--c-ink); overflow-wrap: anywhere; text-wrap: balance; }
+.rm-top .rm-back { margin-left: auto; flex: none; }
+.anvil-role-rm-lead { color: var(--c-muted); max-width: 65ch; text-wrap: pretty; }
+.rm-tabs { display: none; }
+.rm-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.rm-col { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.rm-col-h { font-size: 1.02rem !important; margin: 0 !important; display: flex; align-items: center; gap: 8px; }
+.rm-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c-faint); flex: none; }
+.rm-col.ready .rm-dot { background: var(--c-accent); }
+.rm-col.in_progress .rm-dot { background: var(--pc); }
+.rm-col.shipped .rm-dot { background: var(--c-good); }
+.anvil-role-rm-n { font: 500 .74rem/1 var(--font-mono); color: var(--c-muted); background: var(--c-surface-2); border-radius: 999px; padding: 3px 8px;
+  font-variant-numeric: tabular-nums; }
+.rm-col-hint { font-size: .85rem; color: var(--c-muted); margin-top: -4px; }
+.anvil-role-rm-cards > div { display: grid; gap: 10px; }
+.anvil-role-rm-empty { font-size: .875rem; color: var(--c-faint); padding: 14px 12px; border: 1px dashed var(--c-line); border-radius: var(--radius-sm); text-align: center; }
+.rm-card { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-sm); padding: 14px; display: grid; gap: 8px;
+  transition: border-color var(--dur-fast, 180ms) ease; }
+.rm-card:hover { border-color: color-mix(in srgb, var(--pc, var(--c-brand)) 45%, var(--c-line)); }
+.anvil-role-rm-card-title { font: 600 1rem/1.3 var(--font-display); color: var(--c-ink); overflow-wrap: anywhere; text-wrap: balance; }
+.anvil-role-rm-card-note { font-size: .9rem; line-height: 1.5; color: var(--c-muted); overflow-wrap: anywhere; text-wrap: pretty; }
+.rm-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 34px; }
+.anvil-role-rm-asked { font: 500 .78rem/1 var(--font-mono); color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.anvil-role-rm-asked::before { width: 14px !important; height: 14px !important; background: var(--pc, var(--c-brand)); }
+.anvil-role-rm-shipped { font: 500 .76rem/1 var(--font-mono); color: var(--c-good); margin-left: auto; }
+.anvil-role-rm-vote { margin-left: auto; }
+.anvil-role-rm-vote > button { min-height: 36px !important; min-width: 64px; border-color: color-mix(in srgb, var(--pc, var(--c-brand)) 45%, var(--c-line)) !important;
+  color: var(--c-ink) !important; font-variant-numeric: tabular-nums; }
+.anvil-role-rm-vote > button:hover { background: color-mix(in srgb, var(--pc, var(--c-brand)) 8%, var(--c-surface)) !important; border-color: var(--pc, var(--c-brand)) !important; }
+.anvil-role-rm-vote > button::before { background: var(--pc, var(--c-brand)); }
+.rm-voted { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--c-good); font-weight: 600; flex-wrap: wrap; }
+.rm-voted .ic { width: 15px; height: 15px; }
+.rm-voted a { color: var(--c-brand); font-weight: 500; }
+.rm-voted a::before { content: "·"; color: var(--c-faint); margin-right: 6px; }
+.rm-vote-form { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--c-line); animation: rm-open var(--dur-base, 220ms) var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
+.rm-vote-form .ui-field > span { font-size: .8rem; font-family: var(--font-mono); font-weight: 500; color: var(--c-muted); }
+.rm-vote-form input { min-height: 42px !important; }
+.rm-form-note { font-size: .78rem; color: var(--c-faint); }
+@keyframes rm-open { from { opacity: 0; transform: translateY(-4px); } }
+.rm-nothing { text-align: center; padding: 40px 24px !important; }
+.rm-nothing .ic { width: 34px; height: 34px; color: var(--c-faint); margin-bottom: 8px; }
+.rm-nothing h2 { font-size: 1.25rem; }
+.rm-ask { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; background: var(--c-surface);
+  border: 1px solid color-mix(in srgb, var(--pc) 30%, var(--c-line)); border-radius: var(--radius); padding: 16px 18px; }
+.rm-ask-text { display: grid; gap: 2px; min-width: 0; }
+.rm-ask-text span { font-size: .9rem; color: var(--c-muted); }
+.rm-ask .rm-send { background: var(--pc); border-color: var(--pc); color: #fff !important; }
+.rm-ask .rm-send:hover { opacity: .9; }
+.rm-foot { text-align: center; font: 500 .74rem/1.3 var(--font-mono); color: var(--c-faint); }
+.rm-foot a { color: var(--c-muted); text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
+.rm-foot a:hover { color: var(--c-ink); }
+.rm-foot img { width: 14px; height: 14px; border-radius: 3px; }
+@media (max-width: 900px) {
+  .rm-board { grid-template-columns: minmax(0, 1fr); }
+  .rm-col:not(.on) { display: none; }
+  .rm-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+  .rm-tabs .anvil-button, .rm-tabs .anvil-role-px-tab > button { width: 100%; justify-content: center; }
+  .ui-seg.rm-tabs .anvil-role-px-tab > button { padding: 9px 4px; font-size: .8rem; min-height: 40px; }
+  .ui-seg.rm-tabs .anvil-role-px-tab.anvil-role-on > button { color: var(--c-ink); box-shadow: inset 0 -2px 0 var(--pc), 0 0 0 1px var(--c-line); }
+}
+@media (max-width: 560px) {
+  .page-r .ui-main { padding: 18px 12px 32px; }
+  .rm-top .rm-back .lbl { display: none; }
+  .rm-ask .rm-send { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .rm-vote-form { animation: none; } }
+
+/* the panel: "Already on the roadmap" + the roadmap link (only on links with a public roadmap) */
+.px-ideas { border: 1px solid color-mix(in srgb, var(--pc) 35%, var(--c-line)); background: color-mix(in srgb, var(--pc) 5%, var(--c-surface));
+  border-radius: 9px; padding: 10px 12px; display: grid; gap: 8px; animation: rm-open var(--dur-base, 220ms) var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
+.px-ideas-h { display: flex; align-items: center; gap: 6px; font: 500 .78rem/1.2 var(--font-mono); color: var(--c-muted); }
+.px-ideas-h .ic { width: 14px; height: 14px; color: var(--pc); }
+.anvil-role-px-ideas-list > div { display: grid; gap: 6px; }
+.px-idea { display: flex; align-items: center; gap: 10px; }
+.anvil-role-px-idea-title { flex: 1; min-width: 0; font-size: .88rem; font-weight: 600; overflow-wrap: anywhere; }
+.anvil-role-px-idea-vote > button { min-height: 34px !important; padding: 5px 10px !important; font-size: .8rem !important; white-space: nowrap; }
+.anvil-role-px-idea-vote > button::before { width: 14px !important; height: 14px !important; background: var(--pc); }
+.px-roadmap-link { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-top: 1px solid var(--c-line); font-size: .85rem; font-weight: 600;
+  color: var(--c-ink) !important; text-decoration: none; min-height: 44px; }
+.px-roadmap-link .ic { width: 15px; height: 15px; color: var(--pc); }
+.px-roadmap-link .ic:last-child { margin-left: auto; color: var(--c-faint); transition: transform var(--dur-fast, 180ms) var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
+.px-roadmap-link:hover .ic:last-child { transform: translateX(3px); color: var(--pc); }
+@media (prefers-reduced-motion: reduce) { .px-ideas { animation: none; } .px-roadmap-link .ic:last-child { transition: none; } }
+
+/* tracking page: the story's public note + "See it on the public roadmap" */
+.tk-public { margin-top: 14px; display: grid; gap: 8px; }
+.anvil-role-tk-story-note { font-size: .92rem; color: var(--c-muted); background: var(--c-surface-2); border-radius: var(--radius-sm); padding: 10px 12px; overflow-wrap: anywhere; }
+.tk-roadmap { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 600; color: var(--pc) !important; text-decoration: none; min-height: 32px; }
+.tk-roadmap .ic { width: 16px; height: 16px; }
+.tk-roadmap:hover span { text-decoration: underline; text-underline-offset: 3px; }
+
+/* story editor: the Public roadmap card, the +1 line; the badge on story cards; the Links roadmap tab text */
+.sy-public textarea { min-height: 70px; }
+.sy-public .ui-field { margin-top: 12px; }
+.sy-pp { margin-top: 12px; display: grid; gap: 8px; }
+.sy-pp-cap { font-size: .82rem; color: var(--c-muted); }
+.sy-pp .rm-card { background: var(--c-surface-2); }
+.sy-pp-links { margin-top: 10px; }
+.anvil-role-sy-votes { font: 500 .8rem/1.3 var(--font-mono); color: var(--c-muted); background: var(--c-surface-2); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 10px; }
+.anvil-role-st-public { display: inline-flex; align-items: center; gap: 5px; font: 500 .72rem/1.3 var(--font-mono); padding: 3px 8px; border-radius: 5px;
+  background: var(--c-good-soft); color: var(--c-good); white-space: nowrap; width: auto; }
+.anvil-role-st-public::before { width: 12px !important; height: 12px !important; }
+.anvil-role-lk-step { font-size: .9rem; color: var(--c-muted); margin: 12px 0 0; }
+
+/* Update everyone who asked */
+.an-dlg textarea { min-height: 120px; }
+.an-dlg .ui-field { margin: 12px 0 10px; }
+.an-dlg .anvil-role-msg-note { margin-bottom: 10px; }
+.an-actions { margin-top: 16px; }
+.an-result { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; }
+.an-result .tick { width: 40px; height: 40px; border-radius: 50%; background: var(--c-good-soft); color: var(--c-good); display: grid; place-items: center; flex: none; }
+.an-result .tick .ic { width: 20px; height: 20px; }
+.anvil-role-an-result-text { font: 600 1.05rem/1.35 var(--font-display); color: var(--c-ink); }

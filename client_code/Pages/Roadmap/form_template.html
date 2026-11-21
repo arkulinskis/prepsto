@@ -1,0 +1,68 @@
+<anvil-form layout="Prepsto.Layouts.Bare">
+  <anvil-block slot="content">
+    <div class="rm" anvil:name="page">
+      <div class="rm-top">
+        <span class="mark"><i class="ic ic-map"></i></span>
+        <div class="rm-title">
+          <anvil-component type="Label" name="board_name" prop:role='["rm-board"]'></anvil-component>
+          <anvil-component type="Label" name="updated" prop:role='["mono-faint"]'></anvil-component>
+        </div>
+        <a class="ui-btn sm rm-back" anvil:name="back_link" href="#" rel="noopener"><i class="ic ic-external"></i><span class="lbl"><anvil-component type="Label" name="back_label" prop:role='["px-inline"]'></anvil-component></span></a>
+      </div>
+      <anvil-component type="Label" name="lead" prop:role='["rm-lead"]'></anvil-component>
+
+      <div class="ui-seg rm-tabs" role="group" aria-label="Roadmap stage" anvil:name="tabs_box">
+        <anvil-component type="RepeatingPanel" name="tabs_panel" prop:item_template="Prepsto.Items.TabButton" prop:role='["contents"]'></anvil-component>
+      </div>
+
+      <div class="rm-board" anvil:name="board_box">
+        <section class="rm-col draft" anvil:name="col_draft">
+          <h2 class="rm-col-h"><span class="rm-dot" aria-hidden="true"></span>Considering <anvil-component type="Label" name="n_draft" prop:role='["px-inline", "rm-n"]'></anvil-component></h2>
+          <div class="rm-col-hint">Ideas the team is weighing up.</div>
+          <anvil-component type="RepeatingPanel" name="draft_panel" prop:item_template="Prepsto.Items.RoadmapCard" prop:role='["rm-cards"]'></anvil-component>
+          <anvil-component type="Label" name="empty_draft" prop:text="Nothing being weighed up right now." prop:role='["rm-empty"]'></anvil-component>
+        </section>
+        <section class="rm-col ready" anvil:name="col_ready">
+          <h2 class="rm-col-h"><span class="rm-dot" aria-hidden="true"></span>Planned <anvil-component type="Label" name="n_ready" prop:role='["px-inline", "rm-n"]'></anvil-component></h2>
+          <div class="rm-col-hint">Decided: these are coming.</div>
+          <anvil-component type="RepeatingPanel" name="ready_panel" prop:item_template="Prepsto.Items.RoadmapCard" prop:role='["rm-cards"]'></anvil-component>
+          <anvil-component type="Label" name="empty_ready" prop:text="Nothing planned yet." prop:role='["rm-empty"]'></anvil-component>
+        </section>
+        <section class="rm-col in_progress" anvil:name="col_building">
+          <h2 class="rm-col-h"><span class="rm-dot" aria-hidden="true"></span>Building <anvil-component type="Label" name="n_building" prop:role='["px-inline", "rm-n"]'></anvil-component></h2>
+          <div class="rm-col-hint">Being built right now.</div>
+          <anvil-component type="RepeatingPanel" name="building_panel" prop:item_template="Prepsto.Items.RoadmapCard" prop:role='["rm-cards"]'></anvil-component>
+          <anvil-component type="Label" name="empty_building" prop:text="Nothing in the works this minute." prop:role='["rm-empty"]'></anvil-component>
+        </section>
+        <section class="rm-col shipped" anvil:name="col_shipped">
+          <h2 class="rm-col-h"><span class="rm-dot" aria-hidden="true"></span>Shipped <anvil-component type="Label" name="n_shipped" prop:role='["px-inline", "rm-n"]'></anvil-component></h2>
+          <div class="rm-col-hint">What changed, newest first.</div>
+          <anvil-component type="RepeatingPanel" name="shipped_panel" prop:item_template="Prepsto.Items.RoadmapCard" prop:role='["rm-cards"]'></anvil-component>
+          <anvil-component type="Label" name="empty_shipped" prop:text="Nothing shipped from the roadmap yet." prop:role='["rm-empty"]'></anvil-component>
+        </section>
+      </div>
+
+      <section class="ui-card rm-nothing" anvil:name="nothing">
+        <i class="ic ic-map"></i>
+        <h2>Nothing on the roadmap yet</h2>
+        <div class="muted">The team hasn't shared any plans here so far. Your ideas are welcome.</div>
+      </section>
+
+      <section class="rm-ask" anvil:name="ask_card">
+        <div class="rm-ask-text"><b>Don't see your idea?</b><span>Tell the team. You'll get a private link to follow what happens to it.</span></div>
+        <a class="ui-btn rm-send" anvil:name="ask_link" href="#"><i class="ic ic-chat"></i>Suggest an idea</a>
+      </section>
+
+      <div class="rm-foot"><a anvil:name="home_link" href="#landing" target="_blank" rel="noopener"><img src="_/theme/icon.svg" alt="">Roadmap by Prepsto · make one free</a></div>
+    </div>
+
+    <div class="tk" anvil:name="missing">
+      <section class="ui-card tk-missing">
+        <img src="_/theme/icon.svg" alt="">
+        <h1>Roadmap not found</h1>
+        <anvil-component type="Label" name="missing_text" prop:role='["muted"]'></anvil-component>
+        <a class="ui-btn" href="#landing">What is Prepsto?</a>
+      </section>
+    </div>
+  </anvil-block>
+</anvil-form>

@@ -7,6 +7,7 @@ Served at https://prepsto.com/_/api/v1/... ; every request needs a key from the 
     GET  /v1/links                     the links the key can see
     GET  /v1/tickets                   ?status=open|new|reviewing|planned|done|archived|all &link= &kind= &tag= &q=
                                        &mine=1 &sort=newest|oldest|priority|rating &limit=25 (max 100) &offset=0
+                                       (note-less "+1" votes from the public roadmap only show with tag=+1 or status=all)
     POST /v1/tickets                   (write) file a new ticket yourself (an idea, a bug you found): {"link": <link id or
                                        its code>, "message", "kind", "page_url", "name" (shown as the sender; default:
                                        your name), "tags", "priority"}
@@ -19,8 +20,10 @@ Served at https://prepsto.com/_/api/v1/... ; every request needs a key from the 
     GET  /v1/stories/<id>              ?format=json (default) | markdown | text | gherkin | jira | csv
     POST /v1/stories                   (write) draft a story from tickets {"ticket_ids": [...]} or a blank one {"link_id"}
     POST /v1/stories/<id>              (write) change it {"title", "persona", "goal", "benefit", "acceptance", "notes",
-                                       "priority", "status", "points"}
+                                       "priority", "status", "points", "public" (on the link's public roadmap), "public_note"}
     POST /v1/stories/<id>/comments     (write) a team comment on the story {"body"}
+    POST /v1/stories/<id>/announce     (reply) "Update everyone who asked": {"body"} goes on the tracking page of every
+                                       ticket linked to the story; answers {posted, total, tracking_off, with_email}
 
 Ids look like "169207-4096" (Anvil's row ids without the brackets). A ticket is one piece of feedback. Answers are JSON: {"ok": true, ...} or {"ok": false, "error": "..."} with a 4xx code.
 Senders' email addresses and their private tracking links are never sent. Rules: ApiKeys.py.
@@ -184,7 +187,8 @@ def _comment(c):
 
 def _story_out(d, full=False):
     out = {k: d.get(k) for k in ("id", "title", "persona", "goal", "benefit", "acceptance", "notes", "priority", "status",
-                                 "points", "source", "created", "updated", "feedback_count", "comment_count", "author")}
+                                 "points", "source", "created", "updated", "feedback_count", "comment_count", "author",
+                                 "public", "public_note", "shipped_at")}
     out["id"] = sid(d["id"])
     out["link"] = {"id": sid(d["board_id"]), "name": d["board"]}
     out["url"] = _app_url("story", d["id"])
@@ -419,7 +423,8 @@ def api_story(story_id, **query):
         def update(k, u, q):
             _story(k, u, story_id)
             body = _body()
-            allowed = ("title", "persona", "goal", "benefit", "acceptance", "notes", "priority", "status", "points")
+            allowed = ("title", "persona", "goal", "benefit", "acceptance", "notes", "priority", "status", "points",
+                       "public", "public_note")
             unknown = [x for x in body if x not in allowed]
             if unknown:
                 raise Problem(400, "Unknown field(s): %s. You can change: %s." % (", ".join(unknown), ", ".join(allowed)))
@@ -449,3 +454,16 @@ def api_story_comment(story_id, **query):
         r = _check(Inbox.comment_as(u, "story", story_id, body.get("body"), [rid(m) for m in body.get("mentions") or []], limit=False))
         return {"comment": _comment(r["comment"])}
     return _serve("/v1/stories/%s/comments" % story_id, run, query, scope="write")
+
+
+@anvil.server.http_endpoint("/v1/stories/:story_id/announce", methods=["POST"])
+def api_story_announce(story_id, **query):
+    story_id = rid(story_id)
+
+    def run(k, u, q):
+        _story(k, u, story_id)
+        body = _body()
+        r = _check(Stories.announce_as(u, story_id, body.get("body"), limit=False))
+        return {"posted": r["posted"], "total": r["total"], "tracking_off": r["tracking_off"], "with_email": len(r["emails"]),
+                "note": "Each sender sees this on their tracking page. Prepsto sends no email; addresses are never sent here."}
+    return _serve("/v1/stories/%s/announce" % story_id, run, query, scope="reply")

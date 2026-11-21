@@ -26,6 +26,10 @@ help_text: |
     <label class="ui-field"><span>Your message</span>
       <anvil-component type="TextArea" name="message_box" prop:role='["px-message"]'></anvil-component>
     </label>
+    <div class="px-ideas" anvil:name="ideas_part" aria-live="polite">
+      <div class="px-ideas-h"><i class="ic ic-map"></i><span>Already on the roadmap</span></div>
+      <anvil-component type="RepeatingPanel" name="ideas_panel" prop:item_template="Prepsto.Items.IdeaMatch" prop:role='["px-ideas-list"]'></anvil-component>
+    </div>
     <div class="ui-field" anvil:name="rate_part"><span>How do you rate it overall?</span>
       <div class="px-rate" role="group" aria-label="Rating">
         <button type="button" data-n="1" aria-label="1 out of 5" anvil:name="s1" anvil:on-dom:click="self.star_click">★</button>
@@ -68,6 +72,8 @@ help_text: |
     <p class="small faint px-mine-note">Kept in this browser only. Open one to see its progress and the team's replies.</p>
     <anvil-component type="Button" name="write_button" prop:text="Write new feedback" prop:role='["btn", "btn-sm", "ic-plus"]'></anvil-component>
   </div>
+
+  <a class="px-roadmap-link" anvil:name="roadmap_link" href="#" target="_blank" rel="noopener"><i class="ic ic-map"></i><span>See what's planned</span><i class="ic ic-arrow"></i></a>
 
   <div class="px-panel-foot">
     <anvil-component type="Label" name="foot_text" prop:role='["px-foot-text"]'></anvil-component>

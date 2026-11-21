@@ -69,6 +69,13 @@ class Track(TrackTemplate):
             self.story_state.text = "· " + STORY.get(st["status"], st["status"])
         n = d.get("supporters") or 0
         self.supporters.text = ("You and " + state.plural(n, "other person", "other people")) if n else "You"
+        slug = d.get("roadmap")  # the story is on the link's public roadmap
+        self.public_box.visible = bool(slug)
+        if slug:
+            state.set_attr(self.roadmap_link, "href", "#r/" + slug)
+            note = (st or {}).get("note") or ""
+            self.story_note.text = note
+            self.story_note.visible = bool(note)
         self._timeline()
         self.reply_card.visible = bool(b.get("is_open"))
 

@@ -7,7 +7,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Boards, Insights, Team, Tracking
+from . import Boards, Insights, Roadmap, Team, Tracking
 
 STATUSES = ["new", "reviewing", "planned", "done", "archived"]
 PRIORITIES = ["", "low", "medium", "high", "urgent"]
@@ -107,7 +107,7 @@ def get_overview():
             "tags": sorted(tags.items(), key=lambda x: (-x[1], x[0]))[:10],
             "stories": len(stories), "stories_ready": len([s for s in stories if s["status"] == "ready"]),
             "attention": [entry_dict(r) for r in attention[:5]],
-            "recent": [entry_dict(r) for r in rows[:6]],
+            "recent": [entry_dict(r) for r in [x for x in rows if not Roadmap.is_silent_vote(x)][:6]],
             "kind_labels": Boards.KINDS, "provider": Insights.PROVIDER}
 
 
@@ -120,7 +120,11 @@ def get_inbox(filters=None):
 
 
 def inbox_view(me, filters=None):
-    """The inbox for `me` (also the API's GET /v1/tickets)."""
+    """The inbox for `me` (also the API's GET /v1/tickets).
+
+    Note-less "+1" votes from the public roadmap (Roadmap.py) are left out unless the tag filter is "+1" or the status
+    is "all" (and hide_votes isn't set: the board view sets it); "silent_votes" counts the ones left out, for the
+    Inbox's "+1 votes" chip."""
     f = filters if isinstance(filters, dict) else {}
     board = Boards.team_board(f.get("board"), me) if f.get("board") else None
     rows = my_entries(me, board)
@@ -136,6 +140,10 @@ def inbox_view(me, filters=None):
         rows = [r for r in rows if r["starred"]]
     if f.get("mine"):
         rows = [r for r in rows if r["assignee"] == me]
+    silent = 0
+    if not (tag == "+1" or (status == "all" and not f.get("hide_votes"))):
+        kept = [r for r in rows if not Roadmap.is_silent_vote(r)]
+        silent, rows = len(rows) - len(kept), kept
     counts = {s: 0 for s in STATUSES}
     for r in rows:
         counts[r["status"] if r["status"] in counts else "new"] += 1
@@ -156,7 +164,7 @@ def inbox_view(me, filters=None):
     for r in my_entries(me, board):
         for t in set(list(r["tags"] or []) + list((r["ai"] or {}).get("tags") or [])):
             tags[t] = tags.get(t, 0) + 1
-    return {"entries": [entry_dict(r) for r in rows[:400]], "total": len(rows), "counts": counts,
+    return {"entries": [entry_dict(r) for r in rows[:400]], "total": len(rows), "counts": counts, "silent_votes": silent,
             "boards": [{"id": b.get_id(), "name": b["name"], "role": Boards.role_in(b, me)} for b in Boards.my_boards(me)],
             "tags": [t for t, _ in sorted(tags.items(), key=lambda x: (-x[1], x[0]))[:16]],
             "kind_labels": Boards.KINDS, "statuses": STATUSES}

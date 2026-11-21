@@ -12,7 +12,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import Insights, Samples, DemoData, Tracking
+from . import Insights, Samples, DemoData, Tracking, Roadmap
 
 KINDS = {"bug": "Bug", "idea": "Idea", "praise": "Praise", "question": "Question", "other": "Other"}
 DEFAULT_KINDS = ["bug", "idea", "praise", "question"]
@@ -53,7 +53,7 @@ def board_dict(b, counts=True, me=None):
          "position": b["position"] or "right", "kinds": list(b["kinds"] or DEFAULT_KINDS),
          "ask_email": b["ask_email"] is not False, "ask_rating": b["ask_rating"] is not False,
          "is_open": b["is_open"] is not False, "is_sample": bool(b["is_sample"]), "created": C.iso(b["created"]),
-         "public_track": Tracking.tracking_on(b)}
+         "public_track": Tracking.tracking_on(b), "roadmap": Roadmap.roadmap_on(b)}
     if counts:
         rows = app_tables.entries.search(board=b)
         d["total"] = len(rows)
@@ -119,6 +119,7 @@ def _clean(data):
     out["ask_rating"] = bool(data.get("ask_rating", True))
     out["is_open"] = bool(data.get("is_open", True))
     out["public_track"] = bool(data.get("public_track", True))
+    out["roadmap"] = bool(data.get("roadmap", False))
     if out["site_url"] and not re.match(r"^https?://", out["site_url"]):
         out["site_url"] = "https://" + out["site_url"]
     return out
@@ -143,20 +144,31 @@ def save_board(board_id, data):
         b = owned_board(board_id, me)
         if b is None:
             return C.fail("That link doesn't exist, or it isn't yours.")
-        try:
-            b.update(**d)
-        except Exception:  # public_track not in the database yet (Schema Mismatch not accepted)
-            d.pop("public_track", None)
-            b.update(**d)
+        _write(lambda v: b.update(**v), d)
     else:
         if len(my_boards(me, owned_only=True)) >= MAX_BOARDS:
             return C.fail("You can have up to %d links. Delete one you no longer use." % MAX_BOARDS)
-        try:
-            b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
-        except Exception:
-            d.pop("public_track", None)
-            b = app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False, is_sample=False, **d)
+        b = _write(lambda v: app_tables.boards.add_row(owner=me, slug=new_slug(), created=C.now(), is_demo=False,
+                                                      is_sample=False, **v), d)
     return C.ok(board=board_dict(b, me=me))
+
+
+NEWER_COLUMNS = ("roadmap", "public_track")  # newest first: dropped one by one if the database doesn't have them yet
+
+
+def _write(fn, d):
+    """fn(values) with every column; if the database lacks the newer columns (Schema Mismatch not accepted in Anvil),
+    again without them, so saving a link always works."""
+    v = dict(d)
+    for drop in (None,) + NEWER_COLUMNS:
+        if drop:
+            v.pop(drop, None)
+        try:
+            return fn(v)
+        except Exception:
+            if drop == NEWER_COLUMNS[-1]:
+                raise
+    return None
 
 
 @anvil.server.callable(require_user=True)
@@ -210,8 +222,12 @@ def widget_config(slug):
     if b is None:
         return C.fail("This feedback link doesn't exist (any more).")
     d = board_dict(b, counts=False)
-    return C.ok(board={k: d[k] for k in ("name", "slug", "site_url", "prompt", "thanks", "label", "color", "kinds",
-                                         "ask_email", "ask_rating", "is_open", "public_track")}, kinds=KINDS)
+    out = {k: d[k] for k in ("name", "slug", "site_url", "prompt", "thanks", "label", "color", "kinds",
+                             "ask_email", "ask_rating", "is_open", "public_track")}
+    out["roadmap"] = C.col(b, "roadmap") is True
+    if out["roadmap"]:  # only then: links without a roadmap get exactly what they always got
+        out["ideas"] = Roadmap.ideas(b)
+    return C.ok(board=out, kinds=KINDS)
 
 
 @anvil.server.callable
